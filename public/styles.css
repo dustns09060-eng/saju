@@ -42,6 +42,38 @@ body {
 
 .disclaimer { text-align: center; font-size: 11.5px; color: #6b7099; margin-top: 26px; }
 
+/* 약관 네비 + 사업자정보 (공통 푸터) */
+.legalnav { text-align: center; margin-top: 10px; }
+.legalnav a { color: #7f86ad; font-size: 11.5px; text-decoration: none; padding: 0 8px; }
+.legalnav a + a { border-left: 1px solid #333a5e; }
+.legalnav a:hover { color: var(--gold-soft); }
+.bizinfo {
+  margin: 14px auto 0; max-width: 380px; font-size: 11px; color: #6b7099; line-height: 1.85;
+}
+.bizinfo__t { color: #8087ad; font-weight: 700; margin-bottom: 3px; }
+.bizinfo div span { display: inline-block; min-width: 92px; color: #565c85; }
+.bizinfo--mini { text-align: left; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 12px; }
+
+/* 약관/개인정보/환불 페이지 */
+.legal { max-width: 640px; margin: 0 auto; padding: 8px 4px 60px; }
+.legal__back { display: inline-block; color: var(--muted); text-decoration: none; font-size: 13px; margin-bottom: 18px; }
+.legal__back:hover { color: var(--gold-soft); }
+.legal h1 { font-family: var(--serif); font-size: 24px; color: var(--gold-soft); margin: 0 0 16px; }
+.legal h2 { font-family: var(--serif); font-size: 16px; color: var(--ink); margin: 26px 0 8px; }
+.legal p, .legal li { font-size: 13.5px; color: #b9bede; line-height: 1.85; }
+.legal ul { padding-left: 18px; margin: 8px 0; }
+.legal li { margin: 4px 0; }
+.legal b { color: var(--gold-soft); font-weight: 700; }
+.legal a { color: var(--gold-soft); }
+.legal__lead { color: var(--muted) !important; margin: 0 0 8px; }
+.legal__biz {
+  margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line);
+  font-size: 12px; color: #7f86ad; line-height: 1.9;
+}
+.legal__biz .bizinfo__t { color: #9aa0c0; font-weight: 700; margin-bottom: 4px; }
+.legal__biz div span { display: inline-block; min-width: 120px; color: #6b7099; }
+.legal__nav { margin-top: 18px; font-size: 12.5px; }
+
 /* ── 버튼 ─────────────────────────────── */
 .btn {
   width: 100%; border: 0; border-radius: 12px; font-family: inherit; font-size: 15.5px;

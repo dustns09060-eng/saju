@@ -49,6 +49,15 @@ function applyBrand() {
   set('[data-b-sub]', b.siteNameSub);
   set('[data-b-tag]', '“ ' + b.tagline + ' ”');
   set('[data-b-narrator]', b.narrator);
+
+  const biz = b.business || {};
+  const v = (k) => (biz[k] && String(biz[k]).trim()) || '미정';
+  const rows = [['상호', v('name')], ['대표자', v('owner')], ['사업자등록번호', v('bizNo')],
+    ['통신판매업 신고번호', v('mailOrderNo')], ['사업장 주소', v('address')], ['연락처', v('tel')], ['이메일', v('email')]];
+  $$('[data-bizinfo]').forEach((el) => {
+    el.innerHTML = '<div class="bizinfo__t">사업자 정보</div>' +
+      rows.map(([k, val]) => `<div><span>${esc(k)}</span>${esc(val)}</div>`).join('');
+  });
 }
 
 let toastT;
