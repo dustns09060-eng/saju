@@ -135,7 +135,7 @@ router.post('/saju/teaser', async (req, res) => {
 });
 
 /* ── 주문 생성 ────────────────────────────────────── */
-router.post('/order', (req, res) => {
+router.post('/order', async (req, res) => {
   try {
     computeChart(req.body || {}); // 입력 유효성 검사 (throw 시 아래 catch)
 
@@ -156,9 +156,9 @@ router.post('/order', (req, res) => {
         crisesAll: Array.isArray(t.crisesAll) ? t.crisesAll.slice(0, 5) : [],
       };
     }
-    const order = orders.create(input, amount);
+    const order = await orders.create(input, amount);
     order.topics = input.topics;
-    orders.save(order);
+    await orders.save(order);
 
     log.info(`주문 생성 ${order.id} — ${order.topics.join(',')} (${amount}원)`);
     res.json({ ok: true, orderId: order.id, amount, payProvider: PAY_PROVIDER });
@@ -172,7 +172,7 @@ router.post('/order', (req, res) => {
 /* ── 결제 검증 ────────────────────────────────────── */
 router.post('/order/pay', async (req, res) => {
   const { orderId } = req.body || {};
-  const order = orders.get(orderId);
+  const order = await orders.get(orderId);
   if (!order) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다.' });
   if (order.status === 'paid' || order.status === 'consumed') return res.json({ ok: true, already: true });
   if (order.status !== 'pending') return res.status(409).json({ ok: false, error: '결제할 수 없는 주문 상태입니다.' });
@@ -188,7 +188,7 @@ router.post('/order/pay', async (req, res) => {
     }
     order.status = 'paid';
     order.payment = { provider: v.provider, paymentId, amount: v.paidAmount, status: v.status, at: new Date().toISOString() };
-    orders.save(order);
+    await orders.save(order);
     log.info(`결제 확인 ${order.id} (${v.provider})`);
     res.json({ ok: true });
   } catch (e) {
@@ -198,8 +198,8 @@ router.post('/order/pay', async (req, res) => {
 });
 
 /* ── 주문 조회 (다시 보기) ────────────────────────── */
-router.get('/order/:id', (req, res) => {
-  const o = orders.get(req.params.id);
+router.get('/order/:id', async (req, res) => {
+  const o = await orders.get(req.params.id);
   if (!o) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다.' });
   res.json({
     ok: true,
@@ -214,7 +214,7 @@ router.get('/order/:id', (req, res) => {
 
 /* ── 유료: AI 풀이 스트리밍 (orderId 필요) ─────────── */
 router.post('/saju/reading', async (req, res) => {
-  const order = orders.get((req.body || {}).orderId);
+  const order = await orders.get((req.body || {}).orderId);
   if (!order) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다. 먼저 결제해 주세요.' });
 
   res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
@@ -264,7 +264,7 @@ router.post('/saju/reading', async (req, res) => {
     order.consumedAt = new Date().toISOString();
     order.chart = chart;
     order.reading = full;
-    orders.save(order);
+    await orders.save(order);
     saveHistory({
       at: order.consumedAt,
       orderId: order.id,

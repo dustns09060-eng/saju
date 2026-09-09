@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const log = require('./lib/logger');
+const orders = require('./lib/orders');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -17,7 +18,17 @@ app.get('/api/logs', (req, res) => res.json(log.recent(Number(req.query.n) || 10
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const PORT = Number(process.env.PORT || 3000);
-app.listen(PORT, () => {
-  log.info(`사주 풀이 웹앱: http://localhost:${PORT}`);
-  log.info(`모델: ${process.env.CLAUDE_MODEL || '(CLI 기본값)'} / 타임아웃: ${process.env.CLAUDE_TIMEOUT_MS || 180000}ms`);
-});
+
+(async () => {
+  try {
+    await orders.init();
+    log.info(`주문 저장소: ${orders.backend}`);
+  } catch (e) {
+    log.error('주문 저장소 초기화 실패:', e.message);
+    process.exit(1);
+  }
+  app.listen(PORT, () => {
+    log.info(`사주 풀이 웹앱: http://localhost:${PORT}`);
+    log.info(`모델: ${process.env.CLAUDE_MODEL || '(CLI 기본값)'} / 타임아웃: ${process.env.CLAUDE_TIMEOUT_MS || 180000}ms`);
+  });
+})();

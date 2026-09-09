@@ -17,6 +17,7 @@
     "@anthropic-ai/sdk": "^0.124.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "manseryeok": "^2.0.0"
+    "manseryeok": "^2.0.0",
+    "pg": "^8.23.0"
   }
 }
