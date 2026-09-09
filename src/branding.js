@@ -15,12 +15,12 @@ module.exports = {
      실제 값으로 채우세요. 빈 값은 화면에 "미정"으로 표시됩니다. */
   business: {
     name: '별헤는밤',                 // 상호
-    owner: '',                        // 대표자 성명
-    bizNo: '',                        // 사업자등록번호 (000-00-00000)
-    mailOrderNo: '',                  // 통신판매업 신고번호
-    address: '',                      // 사업장 주소
-    tel: '',                          // 연락처
-    email: 'dustns09060@gmail.com',   // 고객문의 이메일
+    owner: '오연순',                  // 대표자 성명
+    bizNo: '158-57-0905',             // 사업자등록번호 (※ 확인 필요: 보통 3-2-5 형식 10자리)
+    mailOrderNo: '',                  // 통신판매업 신고번호 (신고 후 입력)
+    address: '대전광역시 서구 계룡로571번길 65',
+    tel: '010-6746-8782',
+    email: 'dustns0906@naver.com',    // 고객문의 이메일
     domain: 'www.별헤는밤.com',
     lastUpdated: '2026-09-09',        // 약관/방침 개정일
   },
