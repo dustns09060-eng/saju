@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>별헤는밤 사주</title>
+  <meta name="description" content="별빛 아래에서 풀어보는 정통 사주. 원국·대운·용신·신살까지." />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+  <div class="app">
+
+    <!-- ── 랜딩 ─────────────────────────────── -->
+    <section class="screen screen--landing" data-screen="landing">
+      <div class="landing">
+        <div class="moon"></div>
+        <p class="landing__eyebrow" data-b-sub>별빛 아래 정통 사주</p>
+        <h1 class="landing__title" data-b-name>별헤는밤</h1>
+        <p class="landing__quote" data-b-tag>&ldquo; 그대의 별을 하나씩 헤아려 &rdquo;</p>
+        <ul class="landing__list">
+          <li>원국·십이운성·신살·귀인까지 짚어드려요</li>
+          <li>대운·용신·오행 균형을 한눈에</li>
+          <li>운명의 짝 · 재물 흐름 · 살펴볼 시기</li>
+        </ul>
+        <button class="btn btn--gold btn--lg" data-action="start">내 사주 보러 가기</button>
+        <p class="landing__price">맛보기 무료 · 상세 풀이 <b data-price-min>2,900</b>원부터</p>
+      </div>
+      <p class="disclaimer">사주 해석은 참고와 위로를 위한 것입니다. 의료·법률·투자 조언이 아닙니다.</p>
+    </section>
+
+    <!-- ── 대화형 입력 ──────────────────────── -->
+    <section class="screen" data-screen="chat" hidden>
+      <div class="chat">
+        <button class="chat__back" data-action="chat-back" aria-label="이전">‹</button>
+        <div class="chat__log" data-chat-log></div>
+        <div class="chat__dock" data-chat-dock></div>
+      </div>
+    </section>
+
+    <!-- ── 결과 ─────────────────────────────── -->
+    <section class="screen" data-screen="result" hidden>
+      <div class="result">
+        <div class="rd-intro" data-intro></div>
+
+        <div class="panel" data-wongook></div>
+        <div class="panel" data-daeun></div>
+        <div class="panel" data-ohaeng></div>
+        <div class="panel" data-soulmate></div>
+        <div class="panel" data-wealth></div>
+        <div class="panel panel--crisis" data-crisis></div>
+
+        <!-- 결제 전: 복채 안내 / 결제 후: 상세 풀이 -->
+        <div class="paywall" data-paywall>
+          <div class="paywall__seal">封</div>
+          <p class="paywall__t">이 뒤의 이야기</p>
+          <p class="paywall__d">타고난 그릇, 살펴볼 시기 다섯, 인연의 결, 고르신 주제별 풀이…<br /><span data-b-narrator>별하</span>가 끝까지 풀어드릴게요.</p>
+          <div class="topics" data-topics></div>
+          <div class="paywall__total">
+            <span><b data-total-count>1</b>가지 · <b data-total-amount>2,900</b>원</span>
+          </div>
+          <button class="btn btn--gold btn--lg" data-action="checkout">복채 내고 마저 듣기</button>
+        </div>
+
+        <div class="panel reading" data-reading-wrap hidden>
+          <div class="reading__body" data-reading></div>
+          <p class="reading__meta" data-read-meta></p>
+        </div>
+
+        <div class="result__foot">
+          <button class="btn btn--ghost" data-action="copy-link">🔗 링크 복사</button>
+          <button class="btn btn--ghost" data-action="share-card">📸 카드 저장</button>
+          <button class="btn btn--ghost" data-action="restart">처음부터</button>
+        </div>
+        <p class="disclaimer">사주 해석은 참고와 위로를 위한 것입니다.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── 결제 모달 ──────────────────────────── -->
+  <div class="modal" data-modal hidden>
+    <div class="modal__box">
+      <div class="modal__seal">卜</div>
+      <p class="modal__t" data-modal-title>복채 (테스트)</p>
+      <p class="modal__d" data-modal-desc>실제로 청구되지 않는 모의 결제예요. 사업자 등록 후 실결제로 전환됩니다.</p>
+      <div class="modal__amount"><b data-modal-amount>2,900</b>원</div>
+      <p class="modal__items" data-modal-items></p>
+      <button class="btn btn--gold btn--lg" data-action="pay-now">복채 내기</button>
+      <button class="btn btn--ghost" data-action="pay-cancel">취소</button>
+    </div>
+  </div>
+
+  <!-- ── 공유 카드 모달 ─────────────────────── -->
+  <div class="modal" data-share-modal hidden>
+    <div class="modal__box">
+      <p class="modal__t">사주 카드</p>
+      <div class="sharecard-wrap"><img data-share-img alt="사주 카드" /><div class="sharecard-loading" data-share-loading>카드 만드는 중…</div></div>
+      <button class="btn btn--gold btn--lg" data-action="share-do" hidden>공유하기</button>
+      <button class="btn btn--gold btn--lg" data-action="share-save">이미지 저장</button>
+      <p class="sharecard-hint" data-share-hint></p>
+      <button class="btn btn--ghost" data-action="share-close">닫기</button>
+    </div>
+  </div>
+
+  <div class="toast" data-toast hidden></div>
+
+  <script src="sharecard.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
