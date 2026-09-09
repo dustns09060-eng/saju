@@ -65,6 +65,7 @@ function toast(msg) {
   try {
     const cfg = await (await fetch('/api/config')).json();
     state.payProvider = cfg.payProvider || 'mock';
+    state.pay = cfg.pay || { provider: 'mock' };
     state.topicList = cfg.topics || [];
     if (cfg.branding) state.brand = { ...state.brand, ...cfg.branding };
   } catch {}
@@ -519,14 +520,34 @@ function closeModal() { $('[data-modal]').hidden = true; }
 
 async function payNow() {
   const btn = $('[data-action="pay-now"]');
-  btn.disabled = true; btn.textContent = '확인 중…';
+  btn.disabled = true; btn.textContent = '결제 중…';
   try {
+    // 포트원 실결제
+    if (state.payProvider === 'portone') {
+      if (!window.PortOne) throw new Error('결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.');
+      const p = state.pay || {};
+      if (!p.storeId || !p.channelKey) throw new Error('결제 설정이 준비되지 않았습니다.');
+      const names = state.topicList.filter((t) => state.picked.has(t.id)).map((t) => t.label);
+      const res = await window.PortOne.requestPayment({
+        storeId: p.storeId,
+        channelKey: p.channelKey,
+        paymentId: state.orderId,
+        orderName: `${state.brand.siteName} 사주 · ${names[0] || '풀이'}${names.length > 1 ? ` 외 ${names.length - 1}건` : ''}`,
+        totalAmount: state.amount,
+        currency: 'CURRENCY_KRW',
+        payMethod: 'CARD',
+        customData: { orderId: state.orderId },
+      });
+      if (res && res.code != null) throw new Error(res.message || '결제가 취소되었습니다.');
+    }
+
+    // 서버 검증 (포트원=실조회 / mock=통과)
     const r = await fetch('/api/order/pay', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: state.orderId, paymentId: 'mock_' + Date.now() }),
+      body: JSON.stringify({ orderId: state.orderId }),
     });
     const d = await r.json();
-    if (!d.ok) throw new Error(d.error || '결제 검증 실패');
+    if (!d.ok) throw new Error(d.error || '결제 확인 실패');
     closeModal();
     state.topicsUsed = [...state.picked];
     location.hash = 'order=' + state.orderId;

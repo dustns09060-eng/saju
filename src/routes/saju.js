@@ -7,7 +7,7 @@ const path = require('path');
 const log = require('../lib/logger');
 const claude = require('../lib/claude');
 const orders = require('../lib/orders');
-const { PROVIDER: PAY_PROVIDER, PRICE_KRW, verifyPayment } = require('../lib/payments');
+const { PROVIDER: PAY_PROVIDER, PRICE_KRW, publicConfig: payPublicConfig, verifyPayment } = require('../lib/payments');
 const { computeChart, InputError } = require('../saju/compute');
 const { formatChartForPrompt } = require('../saju/format');
 const topics = require('../saju/topics');
@@ -81,6 +81,7 @@ router.get('/config', (req, res) => {
   res.json({
     currency: 'KRW',
     payProvider: PAY_PROVIDER,
+    pay: payPublicConfig(),
     aiProvider: claude.PROVIDER,
     topics: topics.publicList(),
     branding,
@@ -170,19 +171,23 @@ router.post('/order', (req, res) => {
 
 /* ── 결제 검증 ────────────────────────────────────── */
 router.post('/order/pay', async (req, res) => {
-  const { orderId, paymentId } = req.body || {};
+  const { orderId } = req.body || {};
   const order = orders.get(orderId);
   if (!order) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다.' });
   if (order.status === 'paid' || order.status === 'consumed') return res.json({ ok: true, already: true });
   if (order.status !== 'pending') return res.status(409).json({ ok: false, error: '결제할 수 없는 주문 상태입니다.' });
 
+  // 포트원/모의 모두 결제 식별자로 주문 ID 를 그대로 쓴다 (프론트도 paymentId: orderId 로 결제창 호출)
+  const paymentId = order.id;
+
   try {
     const v = await verifyPayment({ paymentId, orderId, expectedAmount: order.amount });
     if (!v.ok || v.paidAmount !== order.amount) {
-      return res.status(402).json({ ok: false, error: '결제 검증에 실패했습니다.' });
+      log.warn(`결제 검증 실패 ${order.id} status=${v.status} paid=${v.paidAmount} expected=${order.amount}`);
+      return res.status(402).json({ ok: false, error: '결제가 확인되지 않았습니다. 결제가 완료되었는데도 이 화면이 보이면 고객센터로 문의해 주세요.' });
     }
     order.status = 'paid';
-    order.payment = { provider: v.provider, paymentId: paymentId || null, amount: v.paidAmount, at: new Date().toISOString() };
+    order.payment = { provider: v.provider, paymentId, amount: v.paidAmount, status: v.status, at: new Date().toISOString() };
     orders.save(order);
     log.info(`결제 확인 ${order.id} (${v.provider})`);
     res.json({ ok: true });
