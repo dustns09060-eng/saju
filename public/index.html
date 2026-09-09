@@ -40,51 +40,122 @@
         <button class="chat__back" data-action="chat-back" aria-label="이전">‹</button>
         <div class="chat__log" data-chat-log></div>
         <div class="chat__scene" aria-hidden="true">
-          <svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 380 620" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <radialGradient id="mn" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#fff6df" />
-                <stop offset="55%" stop-color="#e9ce8d" />
-                <stop offset="100%" stop-color="#b98f3e" stop-opacity="0" />
+              <radialGradient id="sky" cx="70%" cy="18%" r="90%">
+                <stop offset="0%" stop-color="#232c58" />
+                <stop offset="55%" stop-color="#131a35" />
+                <stop offset="100%" stop-color="#090d1c" />
               </radialGradient>
-              <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1a2247" />
-                <stop offset="100%" stop-color="#0a0e1e" />
+              <radialGradient id="moonG" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fff7e2" />
+                <stop offset="40%" stop-color="#f0d79a" />
+                <stop offset="70%" stop-color="#c99f52" stop-opacity="0.5" />
+                <stop offset="100%" stop-color="#c99f52" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="neb" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#6b4fa8" stop-opacity="0.5" />
+                <stop offset="100%" stop-color="#6b4fa8" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2b3566" /><stop offset="100%" stop-color="#1a2148" />
               </linearGradient>
+              <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1c2450" /><stop offset="100%" stop-color="#121938" />
+              </linearGradient>
+              <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0e1430" /><stop offset="100%" stop-color="#080b1a" />
+              </linearGradient>
+              <linearGradient id="aur" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#5ee0c0" stop-opacity="0" />
+                <stop offset="50%" stop-color="#5ee0c0" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="#8a7de0" stop-opacity="0" />
+              </linearGradient>
+              <filter id="blur6"><feGaussianBlur stdDeviation="6" /></filter>
+              <filter id="blur2"><feGaussianBlur stdDeviation="2" /></filter>
+              <filter id="glowW" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="3.2" result="b" />
+                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
             </defs>
 
+            <rect width="380" height="620" fill="url(#sky)" />
+            <ellipse cx="150" cy="180" rx="190" ry="130" fill="url(#neb)" filter="url(#blur6)" />
+            <path class="cs-aurora" d="M-20 250 C 80 180, 200 320, 400 220" stroke="url(#aur)" stroke-width="26" fill="none" filter="url(#blur6)" />
+
             <!-- 달 -->
-            <circle cx="300" cy="86" r="60" fill="url(#mn)" opacity="0.9" />
-            <circle cx="300" cy="86" r="30" fill="#fff6df" opacity="0.95" />
+            <circle cx="288" cy="112" r="70" fill="url(#moonG)" />
+            <circle cx="288" cy="112" r="33" fill="#fff7e2" />
+            <circle cx="278" cy="104" r="6" fill="#e8d4b0" opacity="0.25" />
+            <circle cx="298" cy="122" r="4" fill="#e2c98f" opacity="0.3" />
+            <circle cx="292" cy="100" r="3" fill="#e2c98f" opacity="0.25" />
 
             <!-- 별 -->
             <g fill="#fff" class="cs-stars">
-              <circle cx="46" cy="40" r="1.6" /><circle cx="120" cy="26" r="1.1" />
-              <circle cx="182" cy="58" r="1.4" /><circle cx="252" cy="30" r="1" />
-              <circle cx="360" cy="52" r="1.3" /><circle cx="70" cy="96" r="1.2" />
-              <circle cx="150" cy="120" r="1" /><circle cx="24" cy="150" r="1.5" />
-              <circle cx="340" cy="150" r="1.2" /><circle cx="210" cy="150" r="1" />
-              <circle cx="96" cy="188" r="1.3" /><circle cx="300" cy="196" r="1.1" />
-              <circle cx="382" cy="120" r="1" /><circle cx="16" cy="210" r="1.1" />
+              <circle cx="30" cy="36" r="1.7" /><circle cx="78" cy="20" r="1.1" /><circle cx="120" cy="48" r="1.3" />
+              <circle cx="164" cy="24" r="1" /><circle cx="205" cy="52" r="1.5" /><circle cx="250" cy="30" r="1" />
+              <circle cx="330" cy="40" r="1.2" /><circle cx="360" cy="70" r="1.4" /><circle cx="46" cy="96" r="1.3" />
+              <circle cx="96" cy="120" r="1" /><circle cx="150" cy="110" r="1.6" /><circle cx="20" cy="150" r="1.2" />
+              <circle cx="200" cy="150" r="1" /><circle cx="356" cy="150" r="1.3" /><circle cx="70" cy="200" r="1.4" />
+              <circle cx="130" cy="230" r="1" /><circle cx="300" cy="210" r="1.2" /><circle cx="350" cy="250" r="1.1" />
+              <circle cx="24" cy="260" r="1.3" /><circle cx="180" cy="270" r="1" /><circle cx="250" cy="300" r="1.2" />
+              <circle cx="40" cy="320" r="1" /><circle cx="330" cy="320" r="1.1" /><circle cx="110" cy="330" r="1.3" />
+            </g>
+            <!-- 큰 별 (반짝) -->
+            <g fill="#fff" filter="url(#glowW)" class="cs-big">
+              <circle cx="60" cy="60" r="2.4" /><circle cx="230" cy="90" r="2" /><circle cx="320" cy="180" r="2.2" />
             </g>
 
             <!-- 별자리 -->
-            <g class="cs-line" stroke="#e9ce8d" stroke-width="1" fill="none" opacity="0.7">
-              <path d="M56 132 L110 100 L156 150 L214 118 L262 168" />
+            <g class="cs-line" stroke="#f0d79a" stroke-width="1.1" fill="none" opacity="0.75">
+              <path d="M44 210 L96 168 L150 214 L206 176 L250 236 L300 200 L336 260" />
             </g>
-            <g fill="#e9ce8d">
-              <circle cx="56" cy="132" r="2" /><circle cx="110" cy="100" r="2" />
-              <circle cx="156" cy="150" r="2" /><circle cx="214" cy="118" r="2" />
-              <circle cx="262" cy="168" r="2" />
+            <g fill="#f0d79a">
+              <circle cx="44" cy="210" r="2.1" /><circle cx="96" cy="168" r="2.1" /><circle cx="150" cy="214" r="2.1" />
+              <circle cx="206" cy="176" r="2.1" /><circle cx="250" cy="236" r="2.1" /><circle cx="300" cy="200" r="2.1" />
+              <circle cx="336" cy="260" r="2.1" />
             </g>
 
             <!-- 유성 -->
-            <line class="cs-shoot" x1="0" y1="0" x2="34" y2="12" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            <line class="cs-shoot cs-shoot--a" x1="0" y1="0" x2="40" y2="14" stroke="#fff" stroke-width="1.7" stroke-linecap="round" />
+            <line class="cs-shoot cs-shoot--b" x1="0" y1="0" x2="30" y2="16" stroke="#cfe" stroke-width="1.3" stroke-linecap="round" />
 
-            <!-- 산 / 한옥 실루엣 -->
-            <path d="M0 320 L0 250 L70 196 L140 244 L210 190 L300 258 L400 214 L400 320 Z" fill="url(#mt)" />
-            <path d="M0 320 L0 286 L60 260 L130 292 L200 258 L280 300 L360 268 L400 292 L400 320 Z" fill="#0a0e1e" opacity="0.85" />
-            <path d="M176 262 q24 -26 48 0 l-6 4 h-36 z" fill="#0a0e1e" stroke="#2a3157" stroke-width="1" />
+            <!-- 산 3겹 + 안개 -->
+            <path d="M-10 620 L-10 372 L60 300 L120 360 L190 292 L270 372 L340 316 L390 364 L390 620 Z" fill="url(#m1)" />
+            <ellipse cx="180" cy="384" rx="230" ry="18" fill="#cdd6ff" opacity="0.06" filter="url(#blur6)" />
+            <path d="M-10 620 L-10 446 L70 384 L150 442 L230 382 L310 446 L390 404 L390 620 Z" fill="url(#m2)" />
+            <ellipse cx="180" cy="456" rx="250" ry="16" fill="#cdd6ff" opacity="0.05" filter="url(#blur6)" />
+            <path d="M-10 620 L-10 520 L80 470 L170 522 L260 476 L340 524 L390 486 L390 620 Z" fill="url(#m3)" />
+
+            <!-- 오솔길 -->
+            <path d="M186 620 C 210 560, 150 520, 176 470" stroke="#4a5484" stroke-width="8" fill="none" opacity="0.45" stroke-linecap="round" />
+
+            <!-- 정자 (한옥) — 창에 등불 -->
+            <g transform="translate(150 432)">
+              <ellipse cx="14" cy="34" rx="52" ry="16" fill="#f6c15a" opacity="0.28" filter="url(#blur6)" />
+              <rect x="-14" y="8" width="56" height="30" fill="#0a0e20" />
+              <path d="M-30 8 q44 -40 102 0 l-12 7 h-78 z" fill="#0a0e20" stroke="#33407a" stroke-width="1.2" />
+              <path d="M-30 8 l14 -3 h90 l14 3" fill="none" stroke="#3a4788" stroke-width="1" />
+              <rect x="2" y="14" width="22" height="20" rx="1" fill="#f7c65f" filter="url(#blur2)" />
+              <rect x="4" y="16" width="18" height="16" fill="#ffe0a0" />
+              <line x1="13" y1="16" x2="13" y2="32" stroke="#0a0e20" stroke-width="1.4" />
+              <line x1="4" y1="24" x2="22" y2="24" stroke="#0a0e20" stroke-width="1.2" />
+            </g>
+            <!-- 소나무 실루엣 -->
+            <g fill="#070a18">
+              <path d="M296 512 l-18 34 h36 z" /><path d="M296 492 l-15 30 h30 z" /><path d="M296 476 l-11 24 h22 z" /><rect x="293" y="544" width="6" height="20" />
+              <path d="M330 530 l-14 28 h28 z" /><path d="M330 512 l-11 24 h22 z" /><rect x="327" y="556" width="5" height="16" />
+              <path d="M44 520 l-16 30 h32 z" /><path d="M44 502 l-13 26 h26 z" /><rect x="41" y="548" width="6" height="18" />
+            </g>
+            <!-- 석등 -->
+            <g transform="translate(214 522)">
+              <ellipse cx="0" cy="4" rx="12" ry="5" fill="#f6c15a" opacity="0.3" filter="url(#blur2)" />
+              <g fill="#0a0e20" stroke="#33407a" stroke-width="0.8">
+                <rect x="-5" y="12" width="10" height="5" /><rect x="-4" y="1" width="8" height="10" />
+                <path d="M-7 1 h14 l-4 -6 h-6 z" /><rect x="-1.5" y="17" width="3" height="10" />
+              </g>
+              <rect x="-2" y="3" width="4" height="6" fill="#ffe0a0" />
+            </g>
           </svg>
         </div>
         <div class="chat__dock" data-chat-dock></div>
