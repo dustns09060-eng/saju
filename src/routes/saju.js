@@ -152,6 +152,7 @@ router.post('/order', (req, res) => {
         soulmate: t.soulmate || null,
         crisesFree: Array.isArray(t.crisesFree) ? t.crisesFree.slice(0, 3) : [],
         crisesLocked: Number(t.crisesLocked) || 0,
+        crisesAll: Array.isArray(t.crisesAll) ? t.crisesAll.slice(0, 5) : [],
       };
     }
     const order = orders.create(input, amount);

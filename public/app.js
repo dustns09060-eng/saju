@@ -428,13 +428,21 @@ function renderWealth(w) {
     (w.peak ? `<p class="wealth-peak">가장 높은 시기: <b>${w.peak.age}~${w.peak.endAge}세 (${esc(w.peak.ganji)})</b> · ${esc(w.peak.label)}</p>` : '');
 }
 
-function renderCrisis(t) {
+function renderCrisis(t, unlocked) {
   const free = (t && t.crisesFree) || [];
+  const all = (t && t.crisesAll) || [];
   const locked = (t && t.crisesLocked) || 2;
-  if (!free.length && !locked) { $('[data-crisis]').hidden = true; return; }
-  const items = free.map((c, i) => `<div class="crisis-item"><span class="no">0${i + 1}</span><span class="txt">${esc(c)}</span></div>`).join('') +
-    Array.from({ length: locked }, (_, i) => `<div class="crisis-item lock"><span class="no">0${free.length + i + 1}</span><span class="txt">복채를 내면 보여요 복채를</span></div>`).join('');
-  $('[data-crisis]').innerHTML = `<div class="panel__h">살펴볼 시기</div>${items}`;
+  if (!free.length && !all.length && !locked) { $('[data-crisis]').hidden = true; return; }
+
+  let items, note = '';
+  if (unlocked && all.length) {
+    items = all.map((c, i) => `<div class="crisis-item"><span class="no">0${i + 1}</span><span class="txt">${esc(c)}</span></div>`).join('');
+    note = '<p class="reading__meta" style="margin-top:8px">아래 상세 풀이에서 각 시기를 자세히 다룹니다.</p>';
+  } else {
+    items = free.map((c, i) => `<div class="crisis-item"><span class="no">0${i + 1}</span><span class="txt">${esc(c)}</span></div>`).join('') +
+      Array.from({ length: locked }, (_, i) => `<div class="crisis-item lock"><span class="no">0${free.length + i + 1}</span><span class="txt">복채를 내면 보여요 복채를</span></div>`).join('');
+  }
+  $('[data-crisis]').innerHTML = `<div class="panel__h">살펴볼 시기</div>${items}${note}`;
 }
 
 /* ── 주제 선택 + 결제 ─────────────────── */
@@ -522,6 +530,7 @@ async function payNow() {
     closeModal();
     state.topicsUsed = [...state.picked];
     location.hash = 'order=' + state.orderId;
+    renderCrisis(state.teaser, true); // 잠금 해제
     $('[data-paywall]').hidden = true;
     $('[data-reading-wrap]').hidden = false;
     $('[data-reading]').innerHTML = '<div class="skeleton"></div>';
@@ -599,6 +608,7 @@ async function restoreOrder(oid) {
     if (o.topics) { state.picked = new Set(o.topics); }
     show('result');
     if (state.chart) renderResult();
+    renderCrisis(state.teaser, true); // 결제 완료 주문 → 잠금 해제
     $('[data-paywall]').hidden = true;
     $('[data-reading-wrap]').hidden = false;
     if (o.status === 'consumed' && o.reading) {
