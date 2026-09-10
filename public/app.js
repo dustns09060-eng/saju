@@ -370,6 +370,7 @@ function fillPeek(t) {
 function renderResult() {
   const c = state.chart, t = state.teaser;
   $('[data-intro]').textContent = (t && t.intro) || `${state.form.name || '그대'}님, 별을 헤아리는 중이에요… 잠시만요.`;
+  renderSimple(c);
   renderWongook(c);
   renderDaeun(c);
   renderOhaeng(c);
@@ -380,6 +381,38 @@ function renderResult() {
   $('[data-paywall]').hidden = false;
   $('[data-reading-wrap]').hidden = true;
 }
+
+/* 결제 전 '한 눈에' — 계산값을 한자·숫자 없이 쉬운 말로. AI 없이 즉시 표시. */
+const STEM_NICK = {
+  갑: '큰 나무', 을: '화초·덩굴', 병: '한낮의 해', 정: '촛불·등불', 무: '큰 산·대지',
+  기: '텃밭 흙', 경: '무쇠·바위', 신: '보석·낫', 임: '큰 바다', 계: '이슬·시냇물',
+};
+function levelPlain(lv) {
+  if (/극왕|태강|신강/.test(lv || '')) return '타고난 힘이 강한 편';
+  if (/중화/.test(lv || '')) return '큰 치우침 없이 균형 잡힌 편';
+  return '타고난 힘이 여린 편';
+}
+function renderSimple(c) {
+  const el = $('[data-simple]');
+  if (!c || !c.yongsin || !c.pillars || !c.pillars.day) { el.hidden = true; return; }
+  const y = c.yongsin;
+  const day = c.pillars.day.stem;
+  const nick = STEM_NICK[day] || '';
+  const high = EL.slice().sort((a, b) => y.ratio[b] - y.ratio[a])[0];
+  const low = EL.slice().sort((a, b) => y.ratio[a] - y.ratio[b])[0];
+  const nm = state.form.name || '그대';
+  const strong = /강한/.test(levelPlain(y.level));
+  el.hidden = false;
+  el.innerHTML =
+    `<div class="panel__h">한 눈에</div>` +
+    `<p class="rd-simple__p">${esc(nm)}님은 <b>${esc(day)} 일간</b>${nick ? ` — ${esc(nick)} 같은 기운` : ''}이에요. ` +
+    `${levelPlain(y.level)}이라, ${strong ? '넘치는 힘을 알맞게 흘려보내는' : '도와주는 기운을 채우는'} 게 중요합니다.</p>` +
+    `<p class="rd-simple__p">기운은 <b>${esc(high)}</b>이(가) 많고 <b>${esc(low)}</b>이(가) 부족해요. ` +
+    `도움이 되는 건 <b>${esc(y.yongsin)}·${esc(y.huisin)}</b> 기운, 부담이 되는 건 <b>${esc(y.gisin)}</b> 기운이에요.</p>` +
+    `<p class="rd-simple__hint">아래 “명리 데이터”가 이 요약의 근거예요. 뜻은 결제 후 하나씩 풀어드려요.</p>`;
+  window.glossary && glossary.attach(el);
+}
+function openAdv() { const a = document.querySelector('.adv'); if (a) a.open = true; }
 
 function renderWongook(c) {
   const ks = ['year', 'month', 'day', 'hour'].filter((k) => c.pillars[k]);
@@ -646,6 +679,7 @@ async function startReading(orderId) {
       if (!$('[data-wongook]').innerHTML.trim()) renderResult();
       $('[data-paywall]').hidden = true;
       $('[data-reading-wrap]').hidden = false;
+      openAdv();
     },
     onDone: (acc) => { state.reading = acc; },
   });
@@ -751,6 +785,7 @@ async function restoreOrder(oid) {
     renderCrisis(state.teaser, true); // 결제 완료 주문 → 잠금 해제
     $('[data-paywall]').hidden = true;
     $('[data-reading-wrap]').hidden = false;
+    openAdv();
     if (o.status === 'consumed' && o.reading) {
       state.reading = o.reading;
       $('[data-reading]').innerHTML = mdToHtml(o.reading);
