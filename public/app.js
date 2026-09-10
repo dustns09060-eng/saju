@@ -635,61 +635,102 @@ async function payNow() {
 }
 
 async function startReading(orderId) {
-  let acc = '', first = true;
-  const body = $('[data-reading]');
-  try {
-    const res = await fetch('/api/saju/reading', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId }),
-    });
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      throw new Error(d.error || `요청 실패 (${res.status})`);
+  await streamReading({
+    url: '/api/saju/reading', orderId,
+    body: $('[data-reading]'), meta: $('[data-read-meta]'),
+    onChart: (chart) => {
+      state.chart = chart;
+      if (!$('[data-wongook]').innerHTML.trim()) renderResult();
+      $('[data-paywall]').hidden = true;
+      $('[data-reading-wrap]').hidden = false;
+    },
+    onDone: (acc) => { state.reading = acc; },
+  });
+}
+
+/* 사주·타로 공용 스트리밍 리더.
+ * - ping(하트비트)은 무시하되 연결 유지 확인용.
+ * - done 없이 스트림이 끊기면(네트워크 오류) 최대 2회 자동 재연결. 주문은 결제 상태로 남아 서버가 다시 생성한다. */
+async function streamReading({ url, orderId, body, meta, onChart, onDone }) {
+  let attempt = 0;
+  const startedAt = Date.now();
+  let waitTimer = setInterval(() => {
+    if (body.querySelector('.skeleton')) {
+      const s = Math.round((Date.now() - startedAt) / 1000);
+      body.innerHTML = `<div class="skeleton"></div><p class="reading__meta">별하가 붓을 들고 있어요… ${s}초 (보통 1분 안팎)</p>`;
     }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let nl;
-      while ((nl = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0, nl).trim();
-        buf = buf.slice(nl + 1);
-        if (!line) continue;
-        let msg;
-        try { msg = JSON.parse(line); } catch { continue; }
-        if (msg.type === 'chart') {
-          state.chart = msg.chart;
-          if (!$('[data-wongook]').innerHTML.trim()) renderResult(); // 링크 복원 시 위젯 채우기
-          $('[data-paywall]').hidden = true;
-          $('[data-reading-wrap]').hidden = false;
-        }
-        else if (msg.type === 'delta') {
-          if (first) { body.innerHTML = ''; first = false; autoScrollStart(); }
-          acc += msg.text;
-          body.innerHTML = mdToHtml(acc) + '<span class="cursor"></span>';
-          stickScroll();
-        } else if (msg.type === 'done') {
-          body.innerHTML = mdToHtml(acc);
-          state.reading = acc;
-          window.glossary && glossary.attach(body);
-          autoScrollStop();
-          $('[data-read-meta]').textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
-        } else if (msg.type === 'error') {
-          autoScrollStop();
-          acc = '';
-          body.innerHTML = `<p style="color:#e88a8a">${esc(msg.error)}</p><p class="reading__meta">복채는 완료되었습니다. 이 링크를 저장하면 다시 시도할 수 있어요.</p>`;
-          throw new Error(msg.error);
+  }, 3000);
+
+  while (attempt < 3) {
+    attempt++;
+    let acc = '', first = true, sawDone = false, sawError = null;
+    try {
+      const res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `요청 실패 (${res.status})`);
+      }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line) continue;
+          let msg; try { msg = JSON.parse(line); } catch { continue; }
+          if (msg.type === 'ping') continue;
+          if (msg.type === 'chart' || msg.type === 'draw') { onChart && onChart(msg.chart || msg.draw); }
+          else if (msg.type === 'delta') {
+            if (first) { body.innerHTML = ''; first = false; autoScrollStart(); }
+            acc += msg.text;
+            body.innerHTML = mdToHtml(acc) + '<span class="cursor"></span>';
+            stickScroll();
+          } else if (msg.type === 'done') {
+            sawDone = true;
+            body.innerHTML = mdToHtml(acc);
+            window.glossary && glossary.attach(body);
+            autoScrollStop();
+            if (meta) meta.textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
+            onDone && onDone(acc);
+          } else if (msg.type === 'error') {
+            sawError = msg.error;
+          }
         }
       }
+    } catch (e) {
+      sawError = sawError || e.message;
     }
-    if (first) body.innerHTML = '<p>응답이 비어 있어요. 잠시 후 링크로 다시 시도해 주세요.</p>';
-  } catch (e) {
-    if (!body.innerHTML || body.querySelector('.skeleton')) {
-      body.innerHTML = `<p style="color:#e88a8a">${esc(e.message)}</p>`;
+
+    if (sawDone) { clearInterval(waitTimer); return; }
+
+    // 명시적 서버 오류: 1회까지만 재시도, 그 뒤엔 안내
+    if (sawError && attempt >= 2) {
+      clearInterval(waitTimer);
+      autoScrollStop();
+      body.innerHTML =
+        `<p style="color:#e88a8a">${esc(sawError)}</p>` +
+        `<p class="reading__meta">복채는 완료됐습니다. 잠시 후 아래 버튼으로 다시 시도해 주세요.</p>` +
+        `<button class="btn btn--ghost" onclick="location.reload()">다시 불러오기</button>`;
+      return;
+    }
+    // 끊김/오류 → 재연결 안내 후 루프 계속
+    if (attempt < 3) {
+      body.innerHTML = `<div class="skeleton"></div><p class="reading__meta">연결이 잠시 끊겨 다시 잇는 중… (${attempt}/2)</p>`;
+      await sleep(1200);
     }
   }
+  clearInterval(waitTimer);
+  body.innerHTML =
+    `<p style="color:#e88a8a">연결이 계속 끊겨 풀이를 받지 못했어요.</p>` +
+    `<p class="reading__meta">복채는 완료됐습니다. 네트워크가 안정된 곳에서 이 링크를 다시 열면 이어집니다.</p>` +
+    `<button class="btn btn--ghost" onclick="location.reload()">다시 불러오기</button>`;
 }
 
 async function restoreOrder(oid) {
@@ -873,54 +914,19 @@ async function tarotDraw() {
 }
 
 async function startTarotReading(orderId) {
-  const body = $('[data-tarot-reading]');
-  let acc = '', first = true;
   $('[data-tarot-foot]').hidden = false;
-  try {
-    const res = await fetch('/api/tarot/reading', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId }),
-    });
-    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `요청 실패 (${res.status})`); }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let nl;
-      while ((nl = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0, nl).trim();
-        buf = buf.slice(nl + 1);
-        if (!line) continue;
-        let msg; try { msg = JSON.parse(line); } catch { continue; }
-        if (msg.type === 'draw') {
-          if ($('[data-tspread]') && !$('[data-tspread]').innerHTML.trim()) {
-            $('[data-tspread]').innerHTML = msg.draw.map((c, i) => tcardHTML({ id: c.id, reversed: c.reversed, label: TAROT_POS[i] })).join('');
-            $('[data-tarot-spread]').hidden = false;
-          }
-        } else if (msg.type === 'delta') {
-          if (first) { body.innerHTML = ''; first = false; autoScrollStart(); }
-          acc += msg.text;
-          body.innerHTML = mdToHtml(acc) + '<span class="cursor"></span>';
-          stickScroll();
-        } else if (msg.type === 'done') {
-          body.innerHTML = mdToHtml(acc);
-          state.tarot.reading = acc;
-          window.glossary && glossary.attach(body);
-          autoScrollStop();
-          $('[data-tarot-read-meta]').textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
-        } else if (msg.type === 'error') {
-          autoScrollStop();
-          body.innerHTML = `<p style="color:#e88a8a">${esc(msg.error)}</p><p class="reading__meta">복채는 완료되었습니다. 이 링크를 저장하면 다시 시도할 수 있어요.</p>`;
-          throw new Error(msg.error);
-        }
+  await streamReading({
+    url: '/api/tarot/reading', orderId,
+    body: $('[data-tarot-reading]'), meta: $('[data-tarot-read-meta]'),
+    onChart: (draw) => {
+      const w = $('[data-tspread]');
+      if (w && !w.innerHTML.trim()) {
+        w.innerHTML = draw.map((c, i) => tcardHTML({ id: c.id, reversed: c.reversed, label: TAROT_POS[i] })).join('');
+        $('[data-tarot-spread]').hidden = false;
       }
-    }
-    if (first) body.innerHTML = '<p>응답이 비어 있어요. 잠시 후 링크로 다시 시도해 주세요.</p>';
-  } catch (e) {
-    if (!body.innerHTML || body.querySelector('.skeleton')) body.innerHTML = `<p style="color:#e88a8a">${esc(e.message)}</p>`;
-  }
+    },
+    onDone: (acc) => { state.tarot.reading = acc; },
+  });
 }
 
 async function restoreTarot(oid) {

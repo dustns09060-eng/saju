@@ -246,7 +246,12 @@ router.post('/saju/reading', async (req, res) => {
   send({ type: 'chart', chart });
 
   const ac = new AbortController();
+  // 첫 토큰까지 수십 초 걸릴 수 있어, 중간 프록시가 유휴 연결을 끊지 않도록 5초마다 ping.
+  const hb = setInterval(() => {
+    if (!res.writableEnded) { try { send({ type: 'ping', t: Date.now() }); } catch {} }
+  }, 5000);
   res.on('close', () => {
+    clearInterval(hb);
     if (!res.writableEnded) ac.abort();
   });
 
@@ -262,6 +267,7 @@ router.post('/saju/reading', async (req, res) => {
       signal: ac.signal,
       onDelta: (t) => send({ type: 'delta', text: t }),
     });
+    clearInterval(hb);
     order.status = 'consumed';
     order.consumedAt = new Date().toISOString();
     order.chart = chart;
@@ -280,6 +286,7 @@ router.post('/saju/reading', async (req, res) => {
     send({ type: 'done', ms: Date.now() - started });
     res.end();
   } catch (e) {
+    clearInterval(hb);
     if (ac.signal.aborted) {
       log.info('풀이 요청 취소됨 (주문은 paid 유지)');
       return res.end();

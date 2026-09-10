@@ -127,7 +127,10 @@ router.post('/reading', async (req, res) => {
     .replace('{{QUESTION}}', q);
 
   const ac = new AbortController();
-  res.on('close', () => { if (!res.writableEnded) ac.abort(); });
+  const hb = setInterval(() => {
+    if (!res.writableEnded) { try { send({ type: 'ping', t: Date.now() }); } catch {} }
+  }, 5000);
+  res.on('close', () => { clearInterval(hb); if (!res.writableEnded) ac.abort(); });
 
   const started = Date.now();
   try {
@@ -135,6 +138,7 @@ router.post('/reading', async (req, res) => {
       signal: ac.signal,
       onDelta: (t) => send({ type: 'delta', text: t }),
     });
+    clearInterval(hb);
     order.status = 'consumed';
     order.consumedAt = new Date().toISOString();
     order.reading = full;
@@ -142,6 +146,7 @@ router.post('/reading', async (req, res) => {
     send({ type: 'done', ms: Date.now() - started });
     res.end();
   } catch (e) {
+    clearInterval(hb);
     if (ac.signal.aborted) return res.end();
     log.error('타로 reading 오류:', e.message);
     send({ type: 'error', error: e.message });
