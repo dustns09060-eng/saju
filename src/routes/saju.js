@@ -13,7 +13,7 @@ const { formatChartForPrompt } = require('../saju/format');
 const topics = require('../saju/topics');
 const branding = require('../branding');
 const tarot = require('../tarot');
-const { publicReviews, hasRealReviews } = require('../data/reviews');
+const { publicReviews, hasRealReviews } = require('../reviews');
 
 const router = express.Router();
 
