@@ -45,6 +45,7 @@ const placeName = (v) => (PLACES.find((p) => p[0] === v) || [, ''])[1];
 function show(name) {
   $$('[data-screen]').forEach((s) => (s.hidden = s.dataset.screen !== name));
   window.scrollTo(0, 0);
+  requestAnimationFrame(() => armReveal());
 }
 function applyBrand() {
   const b = state.brand;
@@ -83,6 +84,46 @@ function stickScroll() {
   if (_autoOn && _stick) window.scrollTo(0, document.documentElement.scrollHeight);
 }
 initAutoScroll();
+
+/* ── 스크롤 등장 연출 (웹툰식) ────────── */
+let _io;
+function revealIO() {
+  if (_io) return _io;
+  _io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); _io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+  return _io;
+}
+function armReveal(root) {
+  if (!('IntersectionObserver' in window)) {
+    $$('.reveal:not(.in)', root || document).forEach((el) => el.classList.add('in'));
+    return;
+  }
+  const io = revealIO();
+  $$('.reveal:not(.in)', root || document).forEach((el) => {
+    if (el.closest('[hidden]')) return;
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight * 0.92 && r.bottom > 0) el.classList.add('in');
+    else io.observe(el);
+  });
+}
+/* 마크다운 결과를 소제목 단위 '컷'으로 재조립 */
+function webtoonify(container) {
+  const kids = [...container.children];
+  if (kids.length < 2) return;
+  const frag = document.createDocumentFragment();
+  let cut = null;
+  const open = () => { cut = document.createElement('section'); cut.className = 'cut reveal'; frag.appendChild(cut); };
+  for (const el of kids) {
+    if (el.tagName === 'H2' || el.tagName === 'H3' || !cut) open();
+    cut.appendChild(el);
+  }
+  container.innerHTML = '';
+  container.appendChild(frag);
+  requestAnimationFrame(() => armReveal(container));
+}
 
 let toastT;
 function toast(msg) {
@@ -123,6 +164,7 @@ function toast(msg) {
   $('[data-action="start"]').addEventListener('click', startChat);
   $('[data-action="chat-back"]').addEventListener('click', () => location.reload());
   $('[data-action="start-tarot"]').addEventListener('click', startTarot);
+  bindIntro();
   bindResultActions();
   bindModal();
   bindShareModal();
@@ -162,7 +204,53 @@ const BEATS = [
 ];
 let beatIdx = 0;
 
+/* ── 도입 컷 (웹툰식) ─────────────────── */
+const INTRO_CUTS = [
+  { cam: 1, lines: ['별이 유난히 낮게 뜬 밤이었어요.', '그대는 좁은 골목을 걷고 있었죠.'] },
+  { cam: 2, lines: ['골목 끝, 불 켜진 창 하나.', '문 옆 등불이 조용히 흔들립니다.'] },
+  { cam: 3, lines: ['그대는 문을 밀고 들어섭니다.', '먹 냄새, 낡은 책상… 그리고 저.'] },
+  { cam: 4, lines: ['제가 붓을 들어요.', '그대의 자리를 펼쳐 보이겠습니다. 이름부터 여쭐게요.'] },
+];
+let introIdx = 0;
+
+function bindIntro() {
+  $('[data-action="intro-next"]').addEventListener('click', (e) => { e.stopPropagation(); introNext(); });
+  $('[data-action="intro-skip"]').addEventListener('click', (e) => { e.stopPropagation(); enterChat(); });
+  $('[data-intro-seq]').addEventListener('click', (e) => {
+    if (e.target.closest('.intro__ui')) return;
+    introNext();
+  });
+}
 function startChat() {
+  let seen = false;
+  try { seen = localStorage.getItem('sb_introSeen') === '1'; } catch {}
+  if (seen) return enterChat();
+  introIdx = 0;
+  show('intro');
+  runIntroCut();
+}
+function runIntroCut() {
+  const cut = INTRO_CUTS[introIdx];
+  $('[data-intro-cam]').className = 'intro__bg cam-' + cut.cam;
+  const box = $('[data-intro-lines]');
+  box.innerHTML = '';
+  cut.lines.forEach((ln, i) => {
+    const p = document.createElement('p');
+    p.className = 'intro__line';
+    p.textContent = ln;
+    p.style.animationDelay = (i * 0.9 + 0.15) + 's';
+    box.appendChild(p);
+  });
+  const last = introIdx === INTRO_CUTS.length - 1;
+  $('[data-action="intro-next"]').textContent = last ? '들어가기 ▷' : '계속 ▽';
+}
+function introNext() {
+  introIdx++;
+  if (introIdx >= INTRO_CUTS.length) return enterChat();
+  runIntroCut();
+}
+function enterChat() {
+  try { localStorage.setItem('sb_introSeen', '1'); } catch {}
   beatIdx = 0;
   $('[data-chat-log]').innerHTML = '';
   show('chat');
@@ -335,6 +423,7 @@ async function goCompute() {
     state.teaser = null;
     renderResult();          // 계산 위젯 먼저 표시
     show('result');
+    armReveal();
     loadTeaser(body);        // 인사·운명의 짝·위기 는 뒤에서 채움 (AI)
   } catch (e) {
     toast(e.message);
@@ -359,6 +448,7 @@ async function loadTeaser(body) {
   renderSoulmate(t && t.soulmate);
   renderCrisis(t || { crisesFree: [], crisesLocked: 2 });
   fillPeek(t);
+  armReveal();
 }
 
 /* 페이월 미리보기: 맛보기 인사의 마지막 문장을 '떡밥'으로 노출 */
@@ -582,6 +672,7 @@ function renderSoulmate(sm, unlocked) {
       `<dl class="sm-grid">${rows}<dt>인상</dt><dd class="sm-lock">결제 후 공개</dd></dl>` +
       `<div class="sm-tags">${['성격', '관계에서의 결', '만나는 시기'].map((x) => `<span class="lock">${esc(x)} 🔒</span>`).join('')}</div>`;
   }
+  armReveal();
 }
 
 function renderWealth(w) {
@@ -625,6 +716,7 @@ function renderCrisis(t, unlocked) {
       Array.from({ length: locked }, (_, i) => `<div class="crisis-item lock"><span class="no">0${free.length + i + 1}</span><span class="txt">복채를 내면 보여요 복채를</span></div>`).join('');
   }
   $('[data-crisis]').innerHTML = `<div class="panel__h">살펴볼 시기</div>${items}${note}`;
+  armReveal();
 }
 
 /* ── 주제 선택 + 결제 ─────────────────── */
@@ -848,6 +940,7 @@ async function streamReading({ url, orderId, body, meta, onChart, onDone }) {
             sawDone = true;
             body.innerHTML = mdToHtml(acc);
             window.glossary && glossary.attach(body);
+            webtoonify(body);
             autoScrollStop();
             if (meta) meta.textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
             onDone && onDone(acc);
@@ -907,6 +1000,7 @@ async function restoreOrder(oid) {
       state.reading = o.reading;
       $('[data-reading]').innerHTML = mdToHtml(o.reading);
       window.glossary && glossary.attach($('[data-reading]'));
+      webtoonify($('[data-reading]'));
       $('[data-read-meta]').textContent = '· 저장된 결과';
       showReviewForm();
     } else {
@@ -1102,6 +1196,7 @@ async function restoreTarot(oid) {
     if (o.status === 'consumed' && o.reading) {
       $('[data-tarot-reading]').innerHTML = mdToHtml(o.reading);
       window.glossary && glossary.attach($('[data-tarot-reading]'));
+      webtoonify($('[data-tarot-reading]'));
       $('[data-tarot-read-meta]').textContent = '· 저장된 결과';
       showReviewForm();
     } else {

@@ -82,6 +82,55 @@
       <footer class="bizinfo bizinfo--mini" data-bizinfo></footer>
     </section>
 
+    <!-- ── 도입 (웹툰식) ────────────────────── -->
+    <section class="screen screen--intro" data-screen="intro" hidden>
+      <div class="intro" data-intro-seq>
+        <div class="intro__bg" data-intro-cam aria-hidden="true">
+          <svg viewBox="0 0 400 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="isky" cx="60%" cy="12%" r="95%">
+                <stop offset="0%" stop-color="#26305c" /><stop offset="55%" stop-color="#141b38" /><stop offset="100%" stop-color="#080b1a" />
+              </radialGradient>
+              <radialGradient id="ilamp" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffe6ad" /><stop offset="45%" stop-color="#f6c15a" stop-opacity="0.7" /><stop offset="100%" stop-color="#f6c15a" stop-opacity="0" />
+              </radialGradient>
+              <filter id="ib"><feGaussianBlur stdDeviation="7" /></filter>
+            </defs>
+            <rect width="400" height="640" fill="url(#isky)" />
+            <g fill="#fff" class="cs-stars" opacity="0.9">
+              <circle cx="40" cy="46" r="1.5"/><circle cx="120" cy="28" r="1"/><circle cx="210" cy="52" r="1.3"/>
+              <circle cx="300" cy="30" r="1"/><circle cx="360" cy="64" r="1.4"/><circle cx="72" cy="120" r="1.1"/>
+              <circle cx="180" cy="104" r="1.5"/><circle cx="330" cy="140" r="1.2"/><circle cx="24" cy="200" r="1.2"/>
+              <circle cx="250" cy="180" r="1"/><circle cx="150" cy="240" r="1.1"/><circle cx="370" cy="230" r="1.3"/>
+            </g>
+            <circle cx="322" cy="96" r="46" fill="#fff7e2" opacity="0.14" filter="url(#ib)" />
+            <circle cx="322" cy="96" r="21" fill="#fdf3d6" />
+            <!-- 골목 담벼락 -->
+            <path d="M-10 640 L-10 300 L120 260 L120 640 Z" fill="#10162e" />
+            <path d="M410 640 L410 300 L270 250 L270 640 Z" fill="#0d1226" />
+            <path d="M120 640 L120 360 L270 360 L270 640 Z" fill="#070b1a" />
+            <!-- 바닥 길 -->
+            <path d="M150 640 L180 380 L215 380 L250 640 Z" fill="#1a2145" opacity="0.6" />
+            <!-- 문 + 등불 -->
+            <g transform="translate(168 300)">
+              <ellipse cx="34" cy="40" rx="60" ry="46" fill="url(#ilamp)" />
+              <rect x="4" y="6" width="60" height="74" fill="#0b1024" stroke="#3a4788" stroke-width="1.4" />
+              <line x1="34" y1="6" x2="34" y2="80" stroke="#2a335e" stroke-width="1.4" />
+              <rect x="52" y="-14" width="9" height="16" fill="#0a0e20" />
+              <rect x="49" y="-2" width="15" height="12" rx="1" fill="#f7c65f" />
+              <rect x="51" y="0" width="11" height="8" fill="#ffe7ab" />
+            </g>
+          </svg>
+        </div>
+        <div class="intro__scrim" aria-hidden="true"></div>
+        <div class="intro__lines" data-intro-lines></div>
+        <div class="intro__ui">
+          <button class="intro__next" data-action="intro-next" aria-label="다음">계속 ▽</button>
+          <button class="intro__skip" data-action="intro-skip">건너뛰기</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ── 대화형 입력 ──────────────────────── -->
     <section class="screen" data-screen="chat" hidden>
       <div class="chat">
@@ -213,13 +262,13 @@
     <!-- ── 결과 ─────────────────────────────── -->
     <section class="screen" data-screen="result" hidden>
       <div class="result">
-        <div class="rd-intro" data-intro></div>
+        <div class="rd-intro reveal" data-intro></div>
 
-        <div class="panel rd-simple" data-simple hidden></div>
-        <div class="panel" data-soulmate></div>
-        <div class="panel panel--crisis" data-crisis></div>
+        <div class="panel rd-simple reveal" data-simple hidden></div>
+        <div class="panel reveal" data-soulmate></div>
+        <div class="panel panel--crisis reveal" data-crisis></div>
 
-        <details class="adv">
+        <details class="adv reveal">
           <summary>명리 데이터 자세히 보기 <span>원국표 · 대운 · 오행 · 재물 그래프</span></summary>
           <p class="adv__note">한자와 숫자가 많아요. 무슨 뜻인지는 결제하시면 <span data-b-narrator>별하</span>가 이 값들을 하나씩 짚어 쉽게 풀어드려요.</p>
           <div class="panel" data-wongook></div>
@@ -229,7 +278,7 @@
         </details>
 
         <!-- 결제 전: 복채 안내 / 결제 후: 상세 풀이 -->
-        <div class="paywall" data-paywall>
+        <div class="paywall reveal" data-paywall>
           <div class="paywall__seal">封</div>
           <p class="paywall__t">결제하면 받는 풀이</p>
           <ul class="paywall__gets">
@@ -257,7 +306,7 @@
           <p class="reading__meta" data-read-meta></p>
         </div>
 
-        <div class="panel review-form" data-review-form hidden>
+        <div class="panel review-form reveal" data-review-form hidden>
           <div class="panel__h">후기 남기기</div>
           <p class="review-form__d">풀이가 도움이 됐다면 두세 줄 남겨주세요. 검토 후 올라갑니다.</p>
           <div class="rv-stars" data-rv-stars></div>
@@ -297,12 +346,12 @@
           <button class="btn btn--gold btn--lg" data-action="tarot-draw">카드 펼치기</button>
         </div>
 
-        <div class="panel" data-tarot-spread hidden>
+        <div class="panel reveal" data-tarot-spread hidden>
           <div class="panel__h">펼친 카드</div>
           <div class="tspread" data-tspread></div>
         </div>
 
-        <div class="paywall" data-tarot-paywall hidden>
+        <div class="paywall reveal" data-tarot-paywall hidden>
           <div class="paywall__seal">卜</div>
           <p class="paywall__t">세 장의 이야기</p>
           <p class="paywall__d">세 자리를 하나로 엮어 <span data-b-narrator>별하</span>가 읽어드릴게요.</p>
@@ -315,7 +364,7 @@
           <p class="reading__meta" data-tarot-read-meta></p>
         </div>
 
-        <div class="panel review-form" data-review-form hidden>
+        <div class="panel review-form reveal" data-review-form hidden>
           <div class="panel__h">후기 남기기</div>
           <p class="review-form__d">풀이가 도움이 됐다면 두세 줄 남겨주세요. 검토 후 올라갑니다.</p>
           <div class="rv-stars" data-rv-stars></div>

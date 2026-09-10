@@ -425,6 +425,58 @@ textarea.reply { resize: none; }
   .modal__box { border-radius: 20px; margin: 0 16px; }
 }
 
+/* ── 도입 컷 (웹툰식) ─────────────────── */
+.screen--intro { animation: none; }
+.intro { position: fixed; inset: 0; overflow: hidden; cursor: pointer; user-select: none; }
+.intro__bg { position: absolute; inset: -6%; transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
+.intro__bg svg { width: 100%; height: 100%; display: block; }
+.intro__bg.cam-1 { transform: scale(1.05) translate(0, 0); }
+.intro__bg.cam-2 { transform: scale(1.5) translate(6%, -4%); }
+.intro__bg.cam-3 { transform: scale(2.1) translate(4%, -8%); }
+.intro__bg.cam-4 { transform: scale(2.8) translate(3%, -12%); }
+.intro__scrim { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(8,11,26,0.35) 0%, rgba(8,11,26,0.2) 45%, rgba(8,11,26,0.85) 100%); }
+.intro__lines {
+  position: absolute; left: 0; right: 0; bottom: 132px; padding: 0 28px; text-align: center;
+}
+.intro__line {
+  font-family: var(--serif); font-size: 18px; line-height: 1.9; color: #f3efe2;
+  margin: 0 0 8px; opacity: 0; transform: translateY(10px);
+  animation: introLine 0.8s ease forwards;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+}
+@keyframes introLine { to { opacity: 1; transform: none; } }
+.intro__ui { position: absolute; left: 0; right: 0; bottom: 44px; text-align: center; }
+.intro__next {
+  background: linear-gradient(135deg, #caa24e, #e8cd8b 55%, #b98f3e); color: #221a06;
+  border: 0; border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 800;
+  padding: 12px 28px; cursor: pointer; box-shadow: 0 6px 22px rgba(216, 180, 90, 0.3);
+  animation: introPulse 2s ease-in-out infinite;
+}
+@keyframes introPulse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.intro__skip {
+  display: block; margin: 14px auto 0; background: none; border: 0; color: #9aa0c0;
+  font-size: 12px; text-decoration: underline; cursor: pointer;
+}
+
+/* ── 스크롤 등장 연출 ─────────────────── */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.reveal.in { opacity: 1; transform: none; }
+.reading__body .cut { padding: 4px 0; }
+.reading__body .cut + .cut { margin-top: 10px; padding-top: 14px; position: relative; }
+.reading__body .cut + .cut::before {
+  content: "◈"; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+  color: var(--gold); font-size: 10px; opacity: 0.6;
+}
+.reading__body .cut h3 { border-bottom: 0; margin-top: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+  .intro__line { animation: none; opacity: 1; transform: none; }
+  .intro__bg { transition: none; }
+  .intro__next { animation: none; }
+}
+
 /* ── 처음 오신 분 안내 (랜딩) ─────────── */
 .landing .btn + .btn { margin-top: 10px; }
 .landing__price { margin-top: 16px; }
