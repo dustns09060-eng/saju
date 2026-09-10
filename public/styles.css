@@ -327,6 +327,7 @@ textarea.reply { resize: none; }
 .reading__body .cursor::after { content: "▍"; color: var(--gold); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 .reading__meta { font-size: 11px; color: #6b7099; margin-top: 12px; }
+.reading__note { font-size: 11.5px; color: var(--muted); margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .skeleton { height: 90px; border-radius: 10px; background: linear-gradient(100deg, #1c2447 30%, #232c56 50%, #1c2447 70%); background-size: 200% 100%; animation: sk 1.4s infinite; }
 @keyframes sk { to { background-position: -200% 0; } }
 
