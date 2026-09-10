@@ -12,6 +12,7 @@ const { computeChart, InputError } = require('../saju/compute');
 const { formatChartForPrompt } = require('../saju/format');
 const topics = require('../saju/topics');
 const branding = require('../branding');
+const tarot = require('../tarot');
 
 const router = express.Router();
 
@@ -84,6 +85,7 @@ router.get('/config', (req, res) => {
     pay: payPublicConfig(),
     aiProvider: claude.PROVIDER,
     topics: topics.publicList(),
+    tarot: { price: tarot.PRICE_KRW },
     branding,
   });
 });

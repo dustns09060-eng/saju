@@ -362,3 +362,111 @@ textarea.reply { resize: none; }
   .modal { align-items: center; }
   .modal__box { border-radius: 20px; margin: 0 16px; }
 }
+
+/* ── 처음 오신 분 안내 (랜딩) ─────────── */
+.landing .btn + .btn { margin-top: 10px; }
+.landing__price { margin-top: 16px; }
+.howto {
+  text-align: left; margin: 30px auto 0; max-width: 340px;
+  background: rgba(255, 255, 255, 0.02); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 14px;
+}
+.howto__h { font-family: var(--serif); font-size: 14.5px; color: var(--gold-soft); font-weight: 800; margin: 0 0 10px; }
+.howto__steps { list-style: none; padding: 0; margin: 0; }
+.howto__steps li { font-size: 12.7px; color: var(--muted); line-height: 1.6; padding: 5px 0 5px 26px; position: relative; }
+.howto__steps li b {
+  position: absolute; left: 0; top: 5px; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(212, 175, 55, 0.14); color: var(--gold-soft); font-size: 10.5px; font-weight: 800;
+  display: grid; place-items: center;
+}
+.howto__steps em, .howto__more em { font-style: normal; color: var(--gold-soft); }
+.howto__more { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.howto__more summary { font-size: 12.5px; color: var(--gold); cursor: pointer; list-style: none; }
+.howto__more summary::-webkit-details-marker { display: none; }
+.howto__more summary::before { content: "＋ "; color: var(--muted); }
+.howto__more[open] summary::before { content: "－ "; }
+.howto__more dl { margin: 10px 0 0; display: grid; grid-template-columns: 62px 1fr; gap: 4px 10px; }
+.howto__more dt { font-size: 11.5px; color: var(--gold); }
+.howto__more dd { margin: 0; font-size: 11.7px; color: var(--muted); line-height: 1.55; }
+.howto__note { font-size: 11px; color: #6b7099; margin: 10px 0 0; }
+
+/* ── 오늘의 카드 ─────────────────────── */
+.daily {
+  margin: 22px auto 0; max-width: 340px; text-align: left;
+  background: linear-gradient(180deg, rgba(232, 205, 139, 0.06), transparent);
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+}
+.daily__h { font-family: var(--serif); font-size: 13px; color: var(--gold); font-weight: 800; margin: 0 0 10px; letter-spacing: 0.04em; }
+.daily__row { display: flex; gap: 14px; align-items: flex-start; }
+.daily__txt { flex: 1; min-width: 0; }
+.daily__name { font-family: var(--serif); font-size: 14px; color: var(--gold-soft); font-weight: 800; margin: 2px 0 6px; }
+.daily__blurb { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* ── 타로 카드 (CSS 미니멀) ──────────── */
+.tcard {
+  position: relative; width: 100px; aspect-ratio: 5 / 8; margin: 0; flex: none;
+  border-radius: 12px; perspective: 700px;
+}
+.tcard__inner, .tcard__back {
+  position: absolute; inset: 0; border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid rgba(232, 205, 139, 0.4);
+  transition: transform 0.6s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.4s;
+  backface-visibility: hidden;
+}
+.tcard__inner {
+  background: radial-gradient(120% 90% at 50% 0%, #23305e, #141a34 70%);
+  color: var(--gold-soft); padding: 8px;
+}
+.tcard__inner.is-rev { transform: rotate(180deg); }
+.tcard__back {
+  background: repeating-linear-gradient(45deg, #1a2246 0 7px, #202a55 7px 14px);
+  color: var(--gold); font-size: 26px;
+}
+.tcard__roman { font-family: var(--serif); font-size: 13px; letter-spacing: 0.1em; opacity: 0.8; }
+.tcard__glyph { font-size: 30px; line-height: 1; color: var(--gold); }
+.tcard__name { font-family: var(--serif); font-size: 12px; text-align: center; line-height: 1.25; }
+.tcard__tag {
+  position: absolute; top: 6px; right: 6px; font-size: 8.5px; color: #0d1024;
+  background: var(--gold-soft); border-radius: 4px; padding: 1px 5px; font-weight: 800;
+}
+.tcard figcaption {
+  position: absolute; left: 0; right: 0; bottom: -22px; text-align: center;
+  font-size: 10.5px; color: var(--muted);
+}
+.tcard.is-down .tcard__inner { transform: rotateY(180deg); opacity: 0; }
+.tcard.is-down .tcard__back { transform: rotateY(0); }
+.tcard:not(.is-down) .tcard__back { transform: rotateY(-180deg); opacity: 0; }
+.tcard--sm { width: 62px; }
+.tcard--sm .tcard__glyph { font-size: 20px; }
+.tcard--sm .tcard__name { font-size: 9.5px; }
+.tcard--sm .tcard__roman { font-size: 10px; }
+@media (prefers-reduced-motion: reduce) {
+  .tcard__inner, .tcard__back { transition: opacity 0.3s; }
+}
+
+.tspread { display: flex; gap: 12px; justify-content: center; padding: 6px 0 26px; flex-wrap: wrap; }
+.tarot-intro { text-align: center; margin: 6px 0 16px; }
+.tarot-intro__h { font-family: var(--serif); font-size: 20px; color: var(--gold-soft); font-weight: 800; margin: 0 0 6px; }
+.tarot-intro__d { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.6; }
+
+/* ── 페이월 미리보기 ─────────────────── */
+.peek {
+  position: relative; text-align: left; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px 14px 6px; margin: 4px 0 16px; overflow: hidden; max-height: 132px;
+}
+.peek__lead { font-family: var(--serif); font-size: 13.5px; color: var(--ink); margin: 0 0 6px; }
+.peek__blur { font-size: 12.5px; color: var(--muted); margin: 0; filter: blur(3px); user-select: none; }
+.peek__fade { position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  background: linear-gradient(transparent, var(--panel)); }
+
+/* ── 쉬운 용어 (밑줄 버튼 + 말풍선) ──── */
+.term {
+  background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  border-bottom: 1px dashed var(--gold); line-height: inherit;
+}
+.term:hover { color: var(--gold-soft); }
+.term-pop {
+  position: absolute; z-index: 70; background: #050813; border: 1px solid var(--gold);
+  color: var(--ink); font-size: 12px; line-height: 1.6; padding: 10px 12px; border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}

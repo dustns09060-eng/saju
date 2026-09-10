@@ -29,9 +29,45 @@
           <li>운명의 짝 · 재물 흐름 · 살펴볼 시기</li>
         </ul>
         <button class="btn btn--gold btn--lg" data-action="start">내 사주 보러 가기</button>
-        <p class="landing__price">맛보기 무료 · 상세 풀이 <b data-price-min>2,900</b>원부터</p>
+        <button class="btn btn--ghost btn--lg" data-action="start-tarot">타로 3장 뽑아보기 <b data-tarot-price>2,900</b>원</button>
+        <p class="landing__price">맛보기 무료 · 사주 상세 풀이 <b data-price-min>2,900</b>원부터</p>
+
+        <!-- 처음 오신 분을 위한 안내 -->
+        <div class="howto">
+          <p class="howto__h">어떻게 진행되나요?</p>
+          <ol class="howto__steps">
+            <li><b>1</b> 태어난 날·시각을 대화하듯 입력해요</li>
+            <li><b>2</b> 만세력이 사주팔자(네 기둥의 干支)를 계산해요</li>
+            <li><b>3</b> 원국표·대운·오행 같은 <em>무료 미리보기</em>를 먼저 보여드려요</li>
+            <li><b>4</b> 더 듣고 싶으면 원하는 주제만 골라 <em>복채(결제)</em>를 내면 <span data-b-narrator>별하</span>가 끝까지 풀어드려요</li>
+          </ol>
+          <details class="howto__more">
+            <summary>사주가 처음이라 용어가 낯설어요</summary>
+            <dl>
+              <dt>사주팔자</dt><dd>태어난 연·월·일·시를 각각 두 글자(干支)로 나타낸 여덟 글자. 타고난 기운의 지도예요.</dd>
+              <dt>원국</dt><dd>그 여덟 글자를 표로 정리한 것. 나의 기본 판이에요.</dd>
+              <dt>일간</dt><dd>태어난 '날'의 첫 글자. 사주에서 '나 자신'을 뜻해요.</dd>
+              <dt>오행</dt><dd>목·화·토·금·수 다섯 기운. 무엇이 많고 적은지로 성향과 보완점을 봐요.</dd>
+              <dt>대운</dt><dd>10년마다 바뀌는 큰 흐름. 지금 어느 구간을 지나는지 봐요.</dd>
+              <dt>용신</dt><dd>나에게 가장 도움이 되는 기운. 방향·색·습관을 잡는 기준이에요.</dd>
+            </dl>
+            <p class="howto__note">풀이 안에서도 어려운 말이 나오면 밑줄 표시를 눌러 뜻을 볼 수 있어요.</p>
+          </details>
+        </div>
+
+        <!-- 오늘의 카드 (무료 타로 미끼) -->
+        <div class="daily" data-daily hidden>
+          <p class="daily__h">오늘의 카드</p>
+          <div class="daily__row">
+            <div class="tcard tcard--sm" data-daily-card></div>
+            <div class="daily__txt">
+              <p class="daily__name" data-daily-name>카드를 여는 중…</p>
+              <p class="daily__blurb" data-daily-blurb></p>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="disclaimer">사주 해석은 참고와 위로를 위한 것입니다. 의료·법률·투자 조언이 아닙니다.</p>
+      <p class="disclaimer">사주·타로 해석은 참고와 위로를 위한 것입니다. 의료·법률·투자 조언이 아닙니다.</p>
       <nav class="legalnav">
         <a href="/terms.html">이용약관</a><a href="/privacy.html">개인정보처리방침</a><a href="/refund.html">환불규정</a>
       </nav>
@@ -183,6 +219,11 @@
           <div class="paywall__seal">封</div>
           <p class="paywall__t">이 뒤의 이야기</p>
           <p class="paywall__d">타고난 그릇, 살펴볼 시기 다섯, 인연의 결, 고르신 주제별 풀이…<br /><span data-b-narrator>별하</span>가 끝까지 풀어드릴게요.</p>
+          <div class="peek" data-peek hidden>
+            <p class="peek__lead" data-peek-lead></p>
+            <p class="peek__blur">그리고 이 대운 구간에서는 재성이 힘을 받아 돈의 흐름이 바뀌는 결이 보입니다. 특히 다음 대운으로 넘어가는 길목에서 관계와 일이 동시에 움직이는데, 이때 무엇을 붙잡고 무엇을 흘려보낼지가</p>
+            <span class="peek__fade"></span>
+          </div>
           <div class="topics" data-topics></div>
           <div class="paywall__total">
             <span><b data-total-count>1</b>가지 · <b data-total-amount>2,900</b>원</span>
@@ -201,6 +242,53 @@
           <button class="btn btn--ghost" data-action="restart">처음부터</button>
         </div>
         <p class="disclaimer">사주 해석은 참고와 위로를 위한 것입니다.</p>
+        <nav class="legalnav">
+          <a href="/terms.html">이용약관</a><a href="/privacy.html">개인정보처리방침</a><a href="/refund.html">환불규정</a>
+        </nav>
+        <footer class="bizinfo bizinfo--mini" data-bizinfo></footer>
+      </div>
+    </section>
+
+    <!-- ── 타로 ─────────────────────────────── -->
+    <section class="screen" data-screen="tarot" hidden>
+      <div class="result">
+        <button class="chat__back" data-action="tarot-back" aria-label="이전">‹</button>
+        <div class="tarot-intro">
+          <p class="tarot-intro__h">타로 세 장</p>
+          <p class="tarot-intro__d">흘러온 자리 · 지금 이 자리 · 나아갈 자리<br />마음속 질문을 하나 정하고 카드를 펼쳐요.</p>
+        </div>
+
+        <div class="panel" data-tarot-ask>
+          <div class="field">
+            <span>무엇이 궁금하세요? (비워도 돼요)</span>
+            <textarea class="reply" rows="3" maxlength="200" data-tarot-q placeholder="예) 지금 이 일을 계속하는 게 맞을까요?"></textarea>
+          </div>
+          <button class="btn btn--gold btn--lg" data-action="tarot-draw">카드 펼치기</button>
+        </div>
+
+        <div class="panel" data-tarot-spread hidden>
+          <div class="panel__h">펼친 카드</div>
+          <div class="tspread" data-tspread></div>
+        </div>
+
+        <div class="paywall" data-tarot-paywall hidden>
+          <div class="paywall__seal">卜</div>
+          <p class="paywall__t">세 장의 이야기</p>
+          <p class="paywall__d">세 자리를 하나로 엮어 <span data-b-narrator>별하</span>가 읽어드릴게요.</p>
+          <div class="paywall__total"><span><b data-tarot-amount>2,900</b>원</span></div>
+          <button class="btn btn--gold btn--lg" data-action="tarot-checkout">복채 내고 풀이 듣기</button>
+        </div>
+
+        <div class="panel reading" data-tarot-reading-wrap hidden>
+          <div class="reading__body" data-tarot-reading></div>
+          <p class="reading__meta" data-tarot-read-meta></p>
+        </div>
+
+        <div class="result__foot" data-tarot-foot hidden>
+          <button class="btn btn--ghost" data-action="tarot-copy">🔗 링크 복사</button>
+          <button class="btn btn--ghost" data-action="tarot-restart">처음부터</button>
+        </div>
+        <p class="disclaimer">타로 해석은 참고와 위로를 위한 것입니다.</p>
         <nav class="legalnav">
           <a href="/terms.html">이용약관</a><a href="/privacy.html">개인정보처리방침</a><a href="/refund.html">환불규정</a>
         </nav>
@@ -238,6 +326,7 @@
 
   <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
   <script src="sharecard.js"></script>
+  <script src="glossary.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

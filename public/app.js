@@ -19,6 +19,10 @@ const won = (n) => Number(n).toLocaleString();
 const state = {
   topicList: [], picked: new Set(),
   payProvider: 'mock',
+  flow: 'saju',            // 'saju' | 'tarot' — 결제/풀이 분기
+  tarotPrice: 2900,
+  tarot: { orderId: null, draw: [], question: '', reading: '' },
+  deck: null,              // id -> {ko, roman, glyph}
   brand: { siteName: '별헤는밤', siteNameSub: '별빛 아래 정통 사주', tagline: '그대의 별을 하나씩 헤아려', narrator: '별하' },
   form: {
     name: '', calendar: 'solar', isLeapMonth: false,
@@ -48,7 +52,7 @@ function applyBrand() {
   set('[data-b-name]', b.siteName);
   set('[data-b-sub]', b.siteNameSub);
   set('[data-b-tag]', '“ ' + b.tagline + ' ”');
-  set('[data-b-narrator]', b.narrator);
+  $$('[data-b-narrator]').forEach((el) => (el.textContent = b.narrator));
 
   const biz = b.business || {};
   const v = (k) => (biz[k] && String(biz[k]).trim()) || '미정';
@@ -59,6 +63,25 @@ function applyBrand() {
       rows.map(([k, val]) => `<div><span>${esc(k)}</span>${esc(val)}</div>`).join('');
   });
 }
+
+/* ── 스트리밍 중 자동 스크롤 ─────────────
+ * 풀이가 채워지는 동안 화면을 따라 내려간다.
+ * 사용자가 위로 스크롤해 읽기 시작하면(하단에서 140px 이상) 멈춘다. */
+let _stick = false;
+function initAutoScroll() {
+  window.addEventListener('scroll', () => {
+    if (!_autoOn) return;
+    const gap = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+    _stick = gap < 140;
+  }, { passive: true });
+}
+let _autoOn = false;
+function autoScrollStart() { _autoOn = true; _stick = true; }
+function autoScrollStop() { _autoOn = false; }
+function stickScroll() {
+  if (_autoOn && _stick) window.scrollTo(0, document.documentElement.scrollHeight);
+}
+initAutoScroll();
 
 let toastT;
 function toast(msg) {
@@ -76,6 +99,7 @@ function toast(msg) {
     state.payProvider = cfg.payProvider || 'mock';
     state.pay = cfg.pay || { provider: 'mock' };
     state.topicList = cfg.topics || [];
+    if (cfg.tarot && cfg.tarot.price) state.tarotPrice = cfg.tarot.price;
     if (cfg.branding) state.brand = { ...state.brand, ...cfg.branding };
   } catch {}
   applyBrand();
@@ -83,6 +107,8 @@ function toast(msg) {
     $('[data-price-min]').textContent = won(Math.min(...state.topicList.map((t) => t.price)));
     state.picked.add(state.topicList[0].id);
   }
+  $$('[data-tarot-price]').forEach((el) => (el.textContent = won(state.tarotPrice)));
+  $('[data-tarot-amount]').textContent = won(state.tarotPrice);
   if (state.payProvider !== 'mock') {
     $('[data-modal-title]').textContent = '복채';
     $('[data-modal-desc]').textContent = '아래 금액을 결제합니다.';
@@ -90,21 +116,30 @@ function toast(msg) {
 
   $('[data-action="start"]').addEventListener('click', startChat);
   $('[data-action="chat-back"]').addEventListener('click', () => location.reload());
+  $('[data-action="start-tarot"]').addEventListener('click', startTarot);
   bindResultActions();
   bindModal();
   bindShareModal();
+  bindTarot();
+  loadDaily();
 
-  // 링크(#order=...)를 이미 열린 탭에서 클릭/붙여넣기 해도 반응하도록
-  window.addEventListener('hashchange', () => {
-    const mm = location.hash.match(/order=([a-z0-9_]+)/i);
-    if (mm) restoreOrder(mm[1]);
-    else if (![...$$('[data-screen]')].some((s) => s.dataset.screen === 'chat' && !s.hidden)) show('landing');
-  });
+  // 링크(#order=... / #tarot=...)를 이미 열린 탭에서 클릭/붙여넣기 해도 반응하도록
+  window.addEventListener('hashchange', routeHash);
 
-  const m = location.hash.match(/order=([a-z0-9_]+)/i);
-  if (m) return restoreOrder(m[1]);
+  if (routeHash()) return;
   show('landing');
 })();
+
+function routeHash() {
+  const t = location.hash.match(/tarot=([a-z0-9_]+)/i);
+  if (t) { restoreTarot(t[1]); return true; }
+  const o = location.hash.match(/order=([a-z0-9_]+)/i);
+  if (o) { restoreOrder(o[1]); return true; }
+  const onChat = [...$$('[data-screen]')].some((s) => s.dataset.screen === 'chat' && !s.hidden);
+  const onTarot = [...$$('[data-screen]')].some((s) => s.dataset.screen === 'tarot' && !s.hidden);
+  if (!onChat && !onTarot) show('landing');
+  return false;
+}
 
 /* ══════════════════════════════════════════
  *  대화형 입력
@@ -310,8 +345,20 @@ async function loadTeaser(body) {
   // 해당 패널만 다시 그림
   const t = state.teaser;
   $('[data-intro]').textContent = (t && t.intro) || `${state.form.name || '그대'}님의 사주를 펼쳤어요. 아래에서 원국과 흐름을 함께 보세요.`;
+  window.glossary && glossary.attach($('[data-intro]'));
   renderSoulmate(t && t.soulmate);
   renderCrisis(t || { crisesFree: [], crisesLocked: 2 });
+  fillPeek(t);
+}
+
+/* 페이월 미리보기: 맛보기 인사의 마지막 문장을 '떡밥'으로 노출 */
+function fillPeek(t) {
+  const peek = $('[data-peek]');
+  if (!peek) return;
+  if (!t || !t.intro) { peek.hidden = true; return; }
+  const parts = String(t.intro).split(/(?<=[.?!…])\s+/).map((s) => s.trim()).filter(Boolean);
+  $('[data-peek-lead]').textContent = parts[parts.length - 1] || String(t.intro);
+  peek.hidden = false;
 }
 
 /* ══════════════════════════════════════════
@@ -492,6 +539,7 @@ function bindResultActions() {
 }
 
 async function checkout() {
+  state.flow = 'saju';
   if (!state.picked.size) return toast('주제를 하나 이상 골라주세요');
   const btn = $('[data-action="checkout"]');
   btn.disabled = true;
@@ -522,7 +570,9 @@ function bindModal() {
 }
 function openModal() {
   $('[data-modal-amount]').textContent = won(state.amount);
-  $('[data-modal-items]').textContent = state.topicList.filter((t) => state.picked.has(t.id)).map((t) => t.emoji + ' ' + t.label).join('  ·  ');
+  $('[data-modal-items]').textContent = state.flow === 'tarot'
+    ? '타로 3장 · 흘러온 / 지금 / 나아갈 자리'
+    : state.topicList.filter((t) => state.picked.has(t.id)).map((t) => t.emoji + ' ' + t.label).join('  ·  ');
   $('[data-modal]').hidden = false;
 }
 function closeModal() { $('[data-modal]').hidden = true; }
@@ -558,6 +608,17 @@ async function payNow() {
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '결제 확인 실패');
     closeModal();
+
+    if (state.flow === 'tarot') {
+      location.hash = 'tarot=' + state.orderId;
+      $('[data-tarot-paywall]').hidden = true;
+      $('[data-tarot-reading-wrap]').hidden = false;
+      $('[data-tarot-reading]').innerHTML = '<div class="skeleton"></div>';
+      $('[data-tarot-reading-wrap]').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      startTarotReading(state.orderId);
+      return;
+    }
+
     state.topicsUsed = [...state.picked];
     location.hash = 'order=' + state.orderId;
     renderCrisis(state.teaser, true); // 잠금 해제
@@ -605,14 +666,18 @@ async function startReading(orderId) {
           $('[data-reading-wrap]').hidden = false;
         }
         else if (msg.type === 'delta') {
-          if (first) { body.innerHTML = ''; first = false; }
+          if (first) { body.innerHTML = ''; first = false; autoScrollStart(); }
           acc += msg.text;
           body.innerHTML = mdToHtml(acc) + '<span class="cursor"></span>';
+          stickScroll();
         } else if (msg.type === 'done') {
           body.innerHTML = mdToHtml(acc);
           state.reading = acc;
+          window.glossary && glossary.attach(body);
+          autoScrollStop();
           $('[data-read-meta]').textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
         } else if (msg.type === 'error') {
+          autoScrollStop();
           acc = '';
           body.innerHTML = `<p style="color:#e88a8a">${esc(msg.error)}</p><p class="reading__meta">복채는 완료되었습니다. 이 링크를 저장하면 다시 시도할 수 있어요.</p>`;
           throw new Error(msg.error);
@@ -628,6 +693,7 @@ async function startReading(orderId) {
 }
 
 async function restoreOrder(oid) {
+  state.flow = 'saju';
   try {
     const o = await (await fetch('/api/order/' + oid)).json();
     if (!o.ok || !['paid', 'consumed'].includes(o.status)) return show('landing');
@@ -644,6 +710,7 @@ async function restoreOrder(oid) {
     if (o.status === 'consumed' && o.reading) {
       state.reading = o.reading;
       $('[data-reading]').innerHTML = mdToHtml(o.reading);
+      window.glossary && glossary.attach($('[data-reading]'));
       $('[data-read-meta]').textContent = '· 저장된 결과';
     } else {
       $('[data-reading]').innerHTML = '<div class="skeleton"></div>';
@@ -684,6 +751,203 @@ async function openShareCard() {
     document.body.appendChild(a); a.click(); a.remove();
     toast('이미지를 저장했어요');
   };
+}
+
+/* ══════════════════════════════════════════
+ *  타로
+ * ══════════════════════════════════════════ */
+const TAROT_POS = ['흘러온 자리', '지금 이 자리', '나아갈 자리'];
+const GLYPH = {
+  star: '✶', wand: '✦', moon: '☾', leaf: '❧', shield: '❖', key: '✜', heart: '❥',
+  wheel: '✺', flame: '✹', lantern: '✧', scale: '⚖', drop: '❃', scythe: '⚑', chain: '⛓',
+  bolt: '⚡', sun: '☀', horn: '✵', wands: '✦', cups: '❥', swords: '✧', pentacles: '✜',
+};
+
+function vid() {
+  try {
+    let v = localStorage.getItem('sb_vid');
+    if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('sb_vid', v); }
+    return v;
+  } catch { return 'anon'; }
+}
+
+async function getDeck() {
+  if (state.deck) return state.deck;
+  try {
+    const d = await (await fetch('/api/tarot/deck')).json();
+    state.deck = {};
+    (d.cards || []).forEach((c) => (state.deck[c.id] = c));
+  } catch { state.deck = {}; }
+  return state.deck;
+}
+
+function tcardHTML(opt) {
+  const d = (state.deck && state.deck[opt.id]) || null;
+  const g = GLYPH[d && d.glyph] || '✦';
+  return `<figure class="tcard ${opt.small ? 'tcard--sm' : ''} ${opt.faceDown ? 'is-down' : ''}" data-card="${esc(opt.id || '')}">
+    <div class="tcard__inner ${opt.reversed ? 'is-rev' : ''}">
+      <span class="tcard__roman">${esc(d ? d.roman : '·')}</span>
+      <span class="tcard__glyph">${g}</span>
+      <span class="tcard__name">${esc(d ? d.ko : '')}</span>
+    </div>
+    <div class="tcard__back">☾</div>
+    ${opt.reversed ? '<span class="tcard__tag">역방향</span>' : ''}
+    ${opt.label ? `<figcaption>${esc(opt.label)}</figcaption>` : ''}
+  </figure>`;
+}
+
+async function loadDaily() {
+  const box = $('[data-daily]');
+  if (!box) return;
+  await getDeck();
+  const seed = new Date().toISOString().slice(0, 10) + ':' + vid();
+  try {
+    const d = await (await fetch('/api/tarot/daily', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seed }),
+    })).json();
+    if (!d.ok) return;
+    const card = state.deck[d.card.id];
+    $('[data-daily-card]').innerHTML = tcardHTML({ id: d.card.id, reversed: d.card.reversed, small: true });
+    $('[data-daily-name]').textContent = (card ? card.ko : '오늘의 카드') + (d.card.reversed ? ' (역방향)' : '');
+    $('[data-daily-blurb]').textContent = d.blurb || '';
+    box.hidden = false;
+  } catch {}
+}
+
+function bindTarot() {
+  $('[data-action="tarot-back"]').addEventListener('click', () => { location.hash = ''; location.reload(); });
+  $('[data-action="tarot-draw"]').addEventListener('click', tarotDraw);
+  $('[data-action="tarot-checkout"]').addEventListener('click', () => {
+    state.flow = 'tarot';
+    state.amount = state.tarotPrice;
+    state.orderId = state.tarot.orderId;
+    if (!state.orderId) return toast('먼저 카드를 펼쳐주세요');
+    openModal();
+  });
+  $('[data-action="tarot-restart"]').addEventListener('click', () => { location.hash = ''; location.reload(); });
+  $('[data-action="tarot-copy"]').addEventListener('click', async () => {
+    const url = location.origin + location.pathname + '#tarot=' + (state.tarot.orderId || '');
+    try { await navigator.clipboard.writeText(url); toast('링크를 복사했어요'); } catch { toast(url); }
+  });
+}
+
+async function startTarot() {
+  state.flow = 'tarot';
+  await getDeck();
+  $('[data-tarot-q]').value = '';
+  $('[data-tarot-ask]').hidden = false;
+  $('[data-tarot-spread]').hidden = true;
+  $('[data-tarot-paywall]').hidden = true;
+  $('[data-tarot-reading-wrap]').hidden = true;
+  $('[data-tarot-foot]').hidden = true;
+  show('tarot');
+}
+
+async function tarotDraw() {
+  const btn = $('[data-action="tarot-draw"]');
+  btn.disabled = true;
+  const q = $('[data-tarot-q]').value.trim();
+  try {
+    const d = await (await fetch('/api/tarot/order', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, name: state.form.name || '' }),
+    })).json();
+    if (!d.ok) throw new Error(d.error || '카드를 펼치지 못했어요');
+    state.tarot = { orderId: d.orderId, draw: d.draw, question: q, reading: '' };
+    state.orderId = d.orderId;
+    state.amount = d.amount;
+
+    const wrap = $('[data-tspread]');
+    wrap.innerHTML = d.draw.map((c, i) => tcardHTML({ id: c.id, reversed: c.reversed, faceDown: true, label: TAROT_POS[i] })).join('');
+    $('[data-tarot-ask]').hidden = true;
+    $('[data-tarot-spread]').hidden = false;
+    // 한 장씩 뒤집기
+    const cards = [...wrap.querySelectorAll('.tcard')];
+    cards.forEach((el, i) => setTimeout(() => el.classList.remove('is-down'), 400 + i * 550));
+    setTimeout(() => { $('[data-tarot-paywall]').hidden = false; $('[data-tarot-paywall]').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400 + cards.length * 550 + 300);
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function startTarotReading(orderId) {
+  const body = $('[data-tarot-reading]');
+  let acc = '', first = true;
+  $('[data-tarot-foot]').hidden = false;
+  try {
+    const res = await fetch('/api/tarot/reading', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId }),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `요청 실패 (${res.status})`); }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let msg; try { msg = JSON.parse(line); } catch { continue; }
+        if (msg.type === 'draw') {
+          if ($('[data-tspread]') && !$('[data-tspread]').innerHTML.trim()) {
+            $('[data-tspread]').innerHTML = msg.draw.map((c, i) => tcardHTML({ id: c.id, reversed: c.reversed, label: TAROT_POS[i] })).join('');
+            $('[data-tarot-spread]').hidden = false;
+          }
+        } else if (msg.type === 'delta') {
+          if (first) { body.innerHTML = ''; first = false; autoScrollStart(); }
+          acc += msg.text;
+          body.innerHTML = mdToHtml(acc) + '<span class="cursor"></span>';
+          stickScroll();
+        } else if (msg.type === 'done') {
+          body.innerHTML = mdToHtml(acc);
+          state.tarot.reading = acc;
+          window.glossary && glossary.attach(body);
+          autoScrollStop();
+          $('[data-tarot-read-meta]').textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
+        } else if (msg.type === 'error') {
+          autoScrollStop();
+          body.innerHTML = `<p style="color:#e88a8a">${esc(msg.error)}</p><p class="reading__meta">복채는 완료되었습니다. 이 링크를 저장하면 다시 시도할 수 있어요.</p>`;
+          throw new Error(msg.error);
+        }
+      }
+    }
+    if (first) body.innerHTML = '<p>응답이 비어 있어요. 잠시 후 링크로 다시 시도해 주세요.</p>';
+  } catch (e) {
+    if (!body.innerHTML || body.querySelector('.skeleton')) body.innerHTML = `<p style="color:#e88a8a">${esc(e.message)}</p>`;
+  }
+}
+
+async function restoreTarot(oid) {
+  state.flow = 'tarot';
+  await getDeck();
+  try {
+    const o = await (await fetch('/api/tarot/order/' + oid)).json();
+    if (!o.ok || !['paid', 'consumed'].includes(o.status)) return show('landing');
+    state.tarot = { orderId: oid, draw: o.draw || [], question: o.question || '', reading: o.reading || '' };
+    show('tarot');
+    $('[data-tarot-ask]').hidden = true;
+    $('[data-tarot-paywall]').hidden = true;
+    $('[data-tarot-spread]').hidden = false;
+    $('[data-tspread]').innerHTML = (o.draw || []).map((c, i) => tcardHTML({ id: c.id, reversed: c.reversed, label: TAROT_POS[i] })).join('');
+    $('[data-tarot-reading-wrap]').hidden = false;
+    $('[data-tarot-foot]').hidden = false;
+    if (o.status === 'consumed' && o.reading) {
+      $('[data-tarot-reading]').innerHTML = mdToHtml(o.reading);
+      window.glossary && glossary.attach($('[data-tarot-reading]'));
+      $('[data-tarot-read-meta]').textContent = '· 저장된 결과';
+    } else {
+      $('[data-tarot-reading]').innerHTML = '<div class="skeleton"></div>';
+      startTarotReading(oid);
+    }
+  } catch {
+    show('landing');
+  }
 }
 
 /* ── markdown ─────────────────────────── */

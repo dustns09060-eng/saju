@@ -11,6 +11,7 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 
 app.use('/api', require('./routes/saju'));
+app.use('/api/tarot', require('./routes/tarot'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 app.get('/api/logs', (req, res) => res.json(log.recent(Number(req.query.n) || 100)));
