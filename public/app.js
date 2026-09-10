@@ -392,6 +392,12 @@ function levelPlain(lv) {
   if (/중화/.test(lv || '')) return '큰 치우침 없이 균형 잡힌 편';
   return '타고난 힘이 여린 편';
 }
+/* 받침 유무로 조사 선택 (예: J('화','이','가')→'화가', J('목','이','가')→'목이') */
+function J(w, withJong, withoutJong) {
+  const code = w.charCodeAt(w.length - 1);
+  const jong = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+  return w + (jong ? withJong : withoutJong);
+}
 function renderSimple(c) {
   const el = $('[data-simple]');
   if (!c || !c.yongsin || !c.pillars || !c.pillars.day) { el.hidden = true; return; }
@@ -407,8 +413,8 @@ function renderSimple(c) {
     `<div class="panel__h">한 눈에</div>` +
     `<p class="rd-simple__p">${esc(nm)}님은 <b>${esc(day)} 일간</b>${nick ? ` — ${esc(nick)} 같은 기운` : ''}이에요. ` +
     `${levelPlain(y.level)}이라, ${strong ? '넘치는 힘을 알맞게 흘려보내는' : '도와주는 기운을 채우는'} 게 중요합니다.</p>` +
-    `<p class="rd-simple__p">기운은 <b>${esc(high)}</b>이(가) 많고 <b>${esc(low)}</b>이(가) 부족해요. ` +
-    `도움이 되는 건 <b>${esc(y.yongsin)}·${esc(y.huisin)}</b> 기운, 부담이 되는 건 <b>${esc(y.gisin)}</b> 기운이에요.</p>` +
+    `<p class="rd-simple__p">기운은 <b>${esc(J(high, '이', '가'))}</b> 많고 <b>${esc(J(low, '이', '가'))}</b> 부족해요. ` +
+    `도움이 되는 건 <b>${esc(y.huisin && y.huisin !== y.yongsin ? y.yongsin + '·' + y.huisin : y.yongsin)}</b> 기운, 부담이 되는 건 <b>${esc(y.gisin)}</b> 기운이에요.</p>` +
     `<p class="rd-simple__hint">아래 “명리 데이터”가 이 요약의 근거예요. 뜻은 결제 후 하나씩 풀어드려요.</p>`;
   window.glossary && glossary.attach(el);
 }
