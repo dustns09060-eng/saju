@@ -54,6 +54,16 @@ body {
 .bizinfo div span { display: inline-block; min-width: 92px; color: #565c85; }
 .bizinfo--mini { text-align: left; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 12px; }
 
+/* 사업자정보 접기 (랜딩 푸터) */
+.bizfold { max-width: 380px; margin: 12px auto 0; }
+.bizfold > summary {
+  list-style: none; cursor: pointer; text-align: center; font-size: 11.5px; color: #7f86ad;
+}
+.bizfold > summary::-webkit-details-marker { display: none; }
+.bizfold > summary::after { content: " ▾"; color: #565c85; }
+.bizfold[open] > summary::after { content: " ▴"; }
+.bizfold[open] .bizinfo--mini { margin-top: 8px; }
+
 /* 약관/개인정보/환불 페이지 */
 .legal { max-width: 640px; margin: 0 auto; padding: 8px 4px 60px; }
 .legal__back { display: inline-block; color: var(--muted); text-decoration: none; font-size: 13px; margin-bottom: 18px; }
