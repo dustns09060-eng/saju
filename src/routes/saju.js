@@ -13,13 +13,17 @@ const { formatChartForPrompt } = require('../saju/format');
 const topics = require('../saju/topics');
 const branding = require('../branding');
 const tarot = require('../tarot');
+const { publicReviews, hasRealReviews } = require('../data/reviews');
 
 const router = express.Router();
 
 const PROMPT_PATH = path.join(__dirname, '..', 'prompts', 'reading.md');
 const TEASER_PATH = path.join(__dirname, '..', 'prompts', 'teaser.md');
 const HISTORY_DIR = path.join(__dirname, '..', '..', 'data', 'history');
-const TEASER_MODEL = process.env.CLAUDE_TEASER_MODEL || 'claude-haiku-4-5';
+// 맛보기는 결제 전 첫인상이라 품질이 중요 → 기본 sonnet. 비용 줄이려면 env 로 haiku 지정.
+const TEASER_MODEL = process.env.CLAUDE_TEASER_MODEL || 'claude-sonnet-5';
+// 통계 노출 최소 기준 (너무 적을 때 "지금까지 3회" 는 역효과)
+const STATS_MIN = Number(process.env.STATS_MIN_SHOW || 30);
 
 const INPUT_KEYS = [
   'calendar', 'isLeapMonth', 'year', 'month', 'day',
@@ -86,8 +90,20 @@ router.get('/config', (req, res) => {
     aiProvider: claude.PROVIDER,
     topics: topics.publicList(),
     tarot: { price: tarot.PRICE_KRW },
+    reviews: publicReviews(),
+    reviewsReal: hasRealReviews(),
     branding,
   });
+});
+
+/* ── 누적 풀이 수 (실데이터, 일정 수준 이상일 때만 노출) ── */
+router.get('/stats', async (req, res) => {
+  try {
+    const n = await orders.countConsumed();
+    res.json({ ok: true, readings: n, show: n >= STATS_MIN });
+  } catch (e) {
+    res.json({ ok: false, readings: 0, show: false });
+  }
 });
 
 /* ── 무료: 사주표만 계산 (결제 전 미리보기) ────────── */
@@ -125,8 +141,8 @@ router.post('/saju/teaser', async (req, res) => {
       teaser: {
         intro: String(data.intro || '').slice(0, 600),
         soulmate: data.soulmate || null,
-        crisesFree: crises.slice(0, 3),
-        crisesLocked: Math.max(0, crises.length - 3),
+        crisesFree: crises.slice(0, 2),
+        crisesLocked: Math.max(0, crises.length - 2),
         crisesAll: crises, // 결제 후 상세화에 사용
       },
     });

@@ -36,6 +36,16 @@ const fileStore = {
   async init() {
     fs.mkdirSync(DIR, { recursive: true });
   },
+  async countConsumed() {
+    try {
+      let n = 0;
+      for (const f of fs.readdirSync(DIR)) {
+        if (!f.endsWith('.json')) continue;
+        try { if (JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')).status === 'consumed') n++; } catch {}
+      }
+      return n;
+    } catch { return 0; }
+  },
   async create(order) {
     fs.mkdirSync(DIR, { recursive: true });
     fs.writeFileSync(fileOf(order.id), JSON.stringify(order, null, 2), 'utf8');
@@ -116,6 +126,12 @@ const pgStore = {
     );
     return order;
   },
+  async countConsumed() {
+    try {
+      const { rows } = await pool.query(`SELECT count(*)::int AS n FROM orders WHERE status = 'consumed'`);
+      return rows[0] ? rows[0].n : 0;
+    } catch { return 0; }
+  },
 };
 
 /* ── 공개 API ───────────────────────────────────────── */
@@ -143,4 +159,5 @@ module.exports = {
   create,
   get: (id) => store.get(id),
   save: (order) => store.save(order),
+  countConsumed: () => store.countConsumed(),
 };

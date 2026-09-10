@@ -21,7 +21,7 @@ const router = express.Router();
 
 const DAILY_PATH = path.join(__dirname, '..', 'prompts', 'tarot-daily.md');
 const READING_PATH = path.join(__dirname, '..', 'prompts', 'tarot.md');
-const TEASER_MODEL = process.env.CLAUDE_TEASER_MODEL || 'claude-haiku-4-5';
+const TEASER_MODEL = process.env.CLAUDE_TEASER_MODEL || 'claude-sonnet-5';
 
 const clean = (s, n) => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, n) : '');
 

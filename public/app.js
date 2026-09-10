@@ -100,9 +100,13 @@ function toast(msg) {
     state.pay = cfg.pay || { provider: 'mock' };
     state.topicList = cfg.topics || [];
     if (cfg.tarot && cfg.tarot.price) state.tarotPrice = cfg.tarot.price;
+    state.reviews = cfg.reviews || [];
+    state.reviewsReal = !!cfg.reviewsReal;
     if (cfg.branding) state.brand = { ...state.brand, ...cfg.branding };
   } catch {}
   applyBrand();
+  renderReviews();
+  loadStats();
   if (state.topicList.length) {
     $('[data-price-min]').textContent = won(Math.min(...state.topicList.map((t) => t.price)));
     state.picked.add(state.topicList[0].id);
@@ -420,6 +424,34 @@ function renderSimple(c) {
 }
 function openAdv() { const a = document.querySelector('.adv'); if (a) a.open = true; }
 
+/* 후기 (랜딩) — 실제 후기 없으면 예시 뱃지 + 안내 */
+function renderReviews() {
+  const box = $('[data-reviews]');
+  if (!box) return;
+  const list = state.reviews || [];
+  if (!list.length) { box.hidden = true; return; }
+  box.hidden = false;
+  $('[data-reviews-note]').hidden = !!state.reviewsReal;
+  $('[data-reviews-list]').innerHTML = list.map((r) => {
+    const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+    return `<figure class="review">
+      <div class="review__top"><span class="review__stars">${stars}</span>${r.sample ? '<span class="review__badge">예시</span>' : ''}</div>
+      <blockquote>${esc(r.text)}</blockquote>
+      <figcaption>${esc(r.name)} · ${esc(r.topic)}</figcaption>
+    </figure>`;
+  }).join('');
+}
+
+async function loadStats() {
+  try {
+    const s = await (await fetch('/api/stats')).json();
+    if (s && s.show && s.readings) {
+      $('[data-stat]').textContent = `지금까지 ${won(s.readings)}번의 풀이가 오갔어요`;
+      $('[data-stat]').hidden = false;
+    }
+  } catch {}
+}
+
 function renderWongook(c) {
   const ks = ['year', 'month', 'day', 'hour'].filter((k) => c.pillars[k]);
   const head = ks.map((k) => `<th>${({ year: '年 년주', month: '月 월주', day: '日 일주', hour: '時 시주' })[k]}</th>`).join('');
@@ -486,19 +518,25 @@ function renderOhaeng(c) {
     `<div class="gauge-now">${esc(y.level)} · ${y.score}점 (득령 ${y.deukryeong ? 'O' : 'X'} / 득지 ${y.deukji ? 'O' : 'X'})</div>`;
 }
 
-function renderSoulmate(sm) {
+function renderSoulmate(sm, unlocked) {
   const el = $('[data-soulmate]');
   if (!sm) { el.hidden = true; return; }
   el.hidden = false;
   const per = sm.personality || [], tr = sm.traits || [];
-  el.innerHTML =
-    `<div class="panel__h">앞으로의 인연</div>` +
-    `<dl class="sm-grid">
-      ${sm.job ? `<dt>일</dt><dd>${esc(sm.job)}</dd>` : ''}
-      ${sm.age ? `<dt>나이</dt><dd>${esc(sm.age)}</dd>` : ''}
-      ${sm.look ? `<dt>인상</dt><dd>${esc(sm.look)}</dd>` : ''}
-    </dl>` +
-    ((per.length || tr.length) ? `<div class="sm-tags">${[...per, ...tr].map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : '');
+  const rows =
+    (sm.job ? `<dt>일</dt><dd>${esc(sm.job)}</dd>` : '') +
+    (sm.age ? `<dt>나이</dt><dd>${esc(sm.age)}</dd>` : '');
+  if (unlocked) {
+    el.innerHTML =
+      `<div class="panel__h">앞으로의 인연</div>` +
+      `<dl class="sm-grid">${rows}${sm.look ? `<dt>인상</dt><dd>${esc(sm.look)}</dd>` : ''}</dl>` +
+      ((per.length || tr.length) ? `<div class="sm-tags">${[...per, ...tr].map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : '');
+  } else {
+    el.innerHTML =
+      `<div class="panel__h">앞으로의 인연</div>` +
+      `<dl class="sm-grid">${rows}<dt>인상</dt><dd class="sm-lock">결제 후 공개</dd></dl>` +
+      `<div class="sm-tags">${['성격', '관계에서의 결', '만나는 시기'].map((x) => `<span class="lock">${esc(x)} 🔒</span>`).join('')}</div>`;
+  }
 }
 
 function renderWealth(w) {
@@ -664,6 +702,7 @@ async function payNow() {
     state.topicsUsed = [...state.picked];
     location.hash = 'order=' + state.orderId;
     renderCrisis(state.teaser, true); // 잠금 해제
+    renderSoulmate(state.teaser && state.teaser.soulmate, true);
     $('[data-paywall]').hidden = true;
     $('[data-reading-wrap]').hidden = false;
     $('[data-reading]').innerHTML = '<div class="skeleton"></div>';
@@ -789,6 +828,7 @@ async function restoreOrder(oid) {
     show('result');
     if (state.chart) renderResult();
     renderCrisis(state.teaser, true); // 결제 완료 주문 → 잠금 해제
+    renderSoulmate(state.teaser && state.teaser.soulmate, true);
     $('[data-paywall]').hidden = true;
     $('[data-reading-wrap]').hidden = false;
     openAdv();

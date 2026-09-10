@@ -31,6 +31,7 @@
         <button class="btn btn--gold btn--lg" data-action="start">내 사주 보러 가기</button>
         <button class="btn btn--ghost btn--lg" data-action="start-tarot">타로 3장 뽑아보기 <b data-tarot-price>2,900</b>원</button>
         <p class="landing__price">맛보기 무료 · 사주 상세 풀이 <b data-price-min>2,900</b>원부터</p>
+        <p class="landing__stat" data-stat hidden></p>
 
         <!-- 처음 오신 분을 위한 안내 -->
         <div class="howto">
@@ -54,6 +55,13 @@
             <p class="howto__note">풀이 안에서도 어려운 말이 나오면 밑줄 표시를 눌러 뜻을 볼 수 있어요.</p>
           </details>
         </div>
+
+        <!-- 후기 -->
+        <section class="reviews" data-reviews hidden>
+          <p class="reviews__h">먼저 본 분들</p>
+          <p class="reviews__note" data-reviews-note hidden>※ 아래는 예시입니다. 실제 후기로 교체 예정이에요.</p>
+          <div class="reviews__list" data-reviews-list></div>
+        </section>
 
         <!-- 오늘의 카드 (무료 타로 미끼) -->
         <div class="daily" data-daily hidden>
@@ -223,8 +231,14 @@
         <!-- 결제 전: 복채 안내 / 결제 후: 상세 풀이 -->
         <div class="paywall" data-paywall>
           <div class="paywall__seal">封</div>
-          <p class="paywall__t">이 뒤의 이야기</p>
-          <p class="paywall__d">타고난 그릇, 살펴볼 시기 다섯, 인연의 결, 고르신 주제별 풀이…<br /><span data-b-narrator>별하</span>가 끝까지 풀어드릴게요.</p>
+          <p class="paywall__t">결제하면 받는 풀이</p>
+          <ul class="paywall__gets">
+            <li>고르신 주제를 <b>원국 값 근거로</b> 4~6문단씩</li>
+            <li>살펴볼 시기 <b>5가지</b> + 각 시기 대처법</li>
+            <li>인연의 인상·성격·<b>만나는 시기</b>까지</li>
+            <li>궁금해하신 질문에 대한 답</li>
+          </ul>
+          <p class="paywall__d"><span data-b-narrator>별하</span>가 한 번에 끝까지 풀어드리고, 링크로 다시 볼 수 있어요.</p>
           <div class="peek" data-peek hidden>
             <p class="peek__lead" data-peek-lead></p>
             <p class="peek__blur">그리고 이 대운 구간에서는 재성이 힘을 받아 돈의 흐름이 바뀌는 결이 보입니다. 특히 다음 대운으로 넘어가는 길목에서 관계와 일이 동시에 움직이는데, 이때 무엇을 붙잡고 무엇을 흘려보낼지가</p>
