@@ -167,7 +167,6 @@ function bubble(text, me) {
   b.className = 'bubble' + (me ? ' bubble--me' : '');
   b.textContent = text;
   $('[data-chat-log]').appendChild(b);
-  b.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
 
 async function runBeat() {
@@ -179,6 +178,10 @@ async function runBeat() {
     await sleep(360);
   }
   renderDock(beat.input);
+  // 입력 영역이 화면 밖으로 밀렸을 때만 살짝 맞춰준다(평소엔 움직이지 않음).
+  const dock = $('[data-chat-dock]');
+  const r = dock.getBoundingClientRect();
+  if (r.bottom > window.innerHeight - 8) dock.scrollIntoView({ block: 'end' });
 }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function nextBeat() { beatIdx++; runBeat(); }
