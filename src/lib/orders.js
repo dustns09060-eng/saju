@@ -37,11 +37,17 @@ const fileStore = {
     fs.mkdirSync(DIR, { recursive: true });
   },
   async countConsumed() {
+    return fileStore._count((o) => o.status === 'consumed');
+  },
+  async countCoupon() {
+    return fileStore._count((o) => o.payment && o.payment.provider === 'coupon');
+  },
+  async _count(pred) {
     try {
       let n = 0;
       for (const f of fs.readdirSync(DIR)) {
         if (!f.endsWith('.json')) continue;
-        try { if (JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')).status === 'consumed') n++; } catch {}
+        try { if (pred(JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')))) n++; } catch {}
       }
       return n;
     } catch { return 0; }
@@ -132,6 +138,12 @@ const pgStore = {
       return rows[0] ? rows[0].n : 0;
     } catch { return 0; }
   },
+  async countCoupon() {
+    try {
+      const { rows } = await pool.query(`SELECT count(*)::int AS n FROM orders WHERE payment->>'provider' = 'coupon'`);
+      return rows[0] ? rows[0].n : 0;
+    } catch { return 0; }
+  },
 };
 
 /* ── 공개 API ───────────────────────────────────────── */
@@ -160,4 +172,5 @@ module.exports = {
   get: (id) => store.get(id),
   save: (order) => store.save(order),
   countConsumed: () => store.countConsumed(),
+  countCoupon: () => store.countCoupon(),
 };

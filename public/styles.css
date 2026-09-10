@@ -130,6 +130,36 @@ body {
 .sm-lock { color: #6b7099; }
 .sm-tags span.lock { color: #6b7099; border-style: dashed; }
 
+/* 쿠폰 (결제 모달) */
+.coupon { margin: 4px 0 12px; text-align: left; }
+.coupon__toggle { background: none; border: 0; color: var(--muted); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
+.coupon__row { display: flex; gap: 6px; margin-top: 8px; }
+.coupon__row input {
+  flex: 1; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; font-family: inherit; font-size: 14px; color: var(--ink); text-transform: uppercase;
+}
+.coupon__row .btn { width: auto; margin: 0; padding: 10px 16px; font-size: 13px; }
+.coupon__msg { margin: 8px 0 0; font-size: 12px; }
+.coupon__msg.ok { color: var(--gold-soft); }
+
+/* 후기 남기기 폼 */
+.review-form__d { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+.rv-stars { display: flex; gap: 4px; margin-bottom: 10px; }
+.rv-stars button { background: none; border: 0; font-size: 24px; line-height: 1; color: #3a4270; cursor: pointer; padding: 2px; }
+.rv-stars button.on { color: var(--gold); }
+.review-form textarea { width: 100%; margin-bottom: 8px; }
+.rv-name {
+  width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 11px 14px; font-family: inherit; font-size: 14px; color: var(--ink); margin-bottom: 10px;
+}
+.review-form .btn { margin-top: 0; }
+.review-form__done { font-family: var(--serif); font-size: 14px; color: var(--gold-soft); margin: 4px 0 0; }
+.review-form.is-done .rv-stars,
+.review-form.is-done textarea,
+.review-form.is-done .rv-name,
+.review-form.is-done [data-action="review-submit"],
+.review-form.is-done .review-form__d { display: none; }
+
 /* ── 대화형 입력 ─────────────────────── */
 .chat { display: block; min-height: 100dvh; padding-bottom: 20px; }
 .chat__back {

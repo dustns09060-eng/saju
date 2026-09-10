@@ -20,6 +20,7 @@ const state = {
   topicList: [], picked: new Set(),
   payProvider: 'mock',
   flow: 'saju',            // 'saju' | 'tarot' — 결제/풀이 분기
+  couponsOn: false, coupon: null, reviewRating: 5,
   tarotPrice: 2900,
   tarot: { orderId: null, draw: [], question: '', reading: '' },
   deck: null,              // id -> {ko, roman, glyph}
@@ -102,6 +103,7 @@ function toast(msg) {
     if (cfg.tarot && cfg.tarot.price) state.tarotPrice = cfg.tarot.price;
     state.reviews = cfg.reviews || [];
     state.reviewsReal = !!cfg.reviewsReal;
+    state.couponsOn = !!cfg.couponsOn;
     if (cfg.branding) state.brand = { ...state.brand, ...cfg.branding };
   } catch {}
   applyBrand();
@@ -125,6 +127,7 @@ function toast(msg) {
   bindModal();
   bindShareModal();
   bindTarot();
+  initReviewForms();
   loadDaily();
 
   // 링크(#order=... / #tarot=...)를 이미 열린 탭에서 클릭/붙여넣기 해도 반응하도록
@@ -452,6 +455,48 @@ async function loadStats() {
   } catch {}
 }
 
+/* ── 후기 남기기 폼 ───────────────────── */
+function currentOrderId() { return state.flow === 'tarot' ? (state.tarot && state.tarot.orderId) : state.orderId; }
+function reviewedSet() { try { return new Set(JSON.parse(localStorage.getItem('sb_reviewed') || '[]')); } catch { return new Set(); } }
+function initReviewForms() {
+  $$('[data-review-form]').forEach((form) => {
+    const box = form.querySelector('[data-rv-stars]');
+    box.innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" data-star="${n}">★</button>`).join('');
+    const paint = (v) => box.querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.star <= v));
+    paint(state.reviewRating);
+    box.onclick = (e) => { const b = e.target.closest('[data-star]'); if (!b) return; state.reviewRating = +b.dataset.star; paint(state.reviewRating); };
+    form.querySelector('[data-action="review-submit"]').onclick = () => submitReview(form);
+  });
+}
+function showReviewForm() {
+  const oid = currentOrderId();
+  const done = !!(oid && reviewedSet().has(oid));
+  $$('[data-review-form]').forEach((form) => {
+    form.hidden = false;
+    form.classList.toggle('is-done', done);
+    form.querySelector('[data-rv-done]').hidden = !done;
+  });
+}
+async function submitReview(form) {
+  const oid = currentOrderId();
+  if (!oid) return toast('주문 정보를 찾을 수 없어요');
+  const text = form.querySelector('[data-rv-text]').value.trim();
+  if (text.length < 10) return toast('후기를 10자 이상 적어주세요');
+  const name = form.querySelector('[data-rv-name]').value.trim();
+  const btn = form.querySelector('[data-action="review-submit"]');
+  btn.disabled = true;
+  try {
+    const d = await fetch('/api/review', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: oid, rating: state.reviewRating, name, text }),
+    }).then((r) => r.json());
+    if (!d.ok) throw new Error(d.error || '전송 실패');
+    try { const s = reviewedSet(); s.add(oid); localStorage.setItem('sb_reviewed', JSON.stringify([...s])); } catch {}
+    showReviewForm();
+    toast('후기 고마워요! 🌙');
+  } catch (e) { toast(e.message); btn.disabled = false; }
+}
+
 function renderWongook(c) {
   const ks = ['year', 'month', 'day', 'hour'].filter((k) => c.pillars[k]);
   const head = ks.map((k) => `<th>${({ year: '年 년주', month: '月 월주', day: '日 일주', hour: '時 시주' })[k]}</th>`).join('');
@@ -647,12 +692,36 @@ function bindModal() {
   $('[data-action="pay-cancel"]').addEventListener('click', closeModal);
   $('[data-modal]').addEventListener('click', (e) => { if (e.target === $('[data-modal]')) closeModal(); });
   $('[data-action="pay-now"]').addEventListener('click', payNow);
+  $('[data-action="coupon-toggle"]').addEventListener('click', () => {
+    const row = $('[data-coupon-row]');
+    row.hidden = !row.hidden;
+    if (!row.hidden) $('[data-coupon-input]').focus();
+  });
+  $('[data-action="coupon-apply"]').addEventListener('click', () => {
+    const code = $('[data-coupon-input]').value.trim();
+    const msg = $('[data-coupon-msg]');
+    if (!code) return;
+    state.coupon = code;
+    msg.hidden = false;
+    msg.textContent = `쿠폰 “${code}” 적용됨 · 결제 없이 열려요`;
+    msg.className = 'coupon__msg ok';
+    $('[data-action="pay-now"]').textContent = '무료로 열기';
+  });
+}
+function resetCoupon() {
+  state.coupon = null;
+  $('[data-coupon-wrap]').hidden = !state.couponsOn;
+  $('[data-coupon-row]').hidden = true;
+  $('[data-coupon-input]').value = '';
+  $('[data-coupon-msg]').hidden = true;
 }
 function openModal() {
   $('[data-modal-amount]').textContent = won(state.amount);
   $('[data-modal-items]').textContent = state.flow === 'tarot'
     ? '타로 3장 · 흘러온 / 지금 / 나아갈 자리'
     : state.topicList.filter((t) => state.picked.has(t.id)).map((t) => t.emoji + ' ' + t.label).join('  ·  ');
+  resetCoupon();
+  $('[data-action="pay-now"]').textContent = state.payProvider === 'mock' ? '복채 내기' : '결제하기';
   $('[data-modal]').hidden = false;
 }
 function closeModal() { $('[data-modal]').hidden = true; }
@@ -661,8 +730,8 @@ async function payNow() {
   const btn = $('[data-action="pay-now"]');
   btn.disabled = true; btn.textContent = '결제 중…';
   try {
-    // 포트원 실결제
-    if (state.payProvider === 'portone') {
+    // 포트원 실결제 (쿠폰이면 결제창을 띄우지 않음)
+    if (state.payProvider === 'portone' && !state.coupon) {
       if (!window.PortOne) throw new Error('결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.');
       const p = state.pay || {};
       if (!p.storeId || !p.channelKey) throw new Error('결제 설정이 준비되지 않았습니다.');
@@ -680,10 +749,10 @@ async function payNow() {
       if (res && res.code != null) throw new Error(res.message || '결제가 취소되었습니다.');
     }
 
-    // 서버 검증 (포트원=실조회 / mock=통과)
+    // 서버 검증 (쿠폰=결제 생략 / 포트원=실조회 / mock=통과)
     const r = await fetch('/api/order/pay', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: state.orderId }),
+      body: JSON.stringify({ orderId: state.orderId, coupon: state.coupon || undefined }),
     });
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '결제 확인 실패');
@@ -711,7 +780,8 @@ async function payNow() {
   } catch (e) {
     toast(e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '복채 내기';
+    btn.disabled = false;
+    btn.textContent = state.coupon ? '무료로 열기' : (state.payProvider === 'mock' ? '복채 내기' : '결제하기');
   }
 }
 
@@ -781,6 +851,7 @@ async function streamReading({ url, orderId, body, meta, onChart, onDone }) {
             autoScrollStop();
             if (meta) meta.textContent = msg.cached ? '· 저장된 결과' : `· ${(msg.ms / 1000).toFixed(0)}초`;
             onDone && onDone(acc);
+            showReviewForm();
           } else if (msg.type === 'error') {
             sawError = msg.error;
           }
@@ -837,6 +908,7 @@ async function restoreOrder(oid) {
       $('[data-reading]').innerHTML = mdToHtml(o.reading);
       window.glossary && glossary.attach($('[data-reading]'));
       $('[data-read-meta]').textContent = '· 저장된 결과';
+      showReviewForm();
     } else {
       $('[data-reading]').innerHTML = '<div class="skeleton"></div>';
       startReading(oid);
@@ -1031,6 +1103,7 @@ async function restoreTarot(oid) {
       $('[data-tarot-reading]').innerHTML = mdToHtml(o.reading);
       window.glossary && glossary.attach($('[data-tarot-reading]'));
       $('[data-tarot-read-meta]').textContent = '· 저장된 결과';
+      showReviewForm();
     } else {
       $('[data-tarot-reading]').innerHTML = '<div class="skeleton"></div>';
       startTarotReading(oid);

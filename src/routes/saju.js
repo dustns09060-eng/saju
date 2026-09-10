@@ -14,6 +14,10 @@ const topics = require('../saju/topics');
 const branding = require('../branding');
 const tarot = require('../tarot');
 const { publicReviews, hasRealReviews } = require('../reviews');
+const reviewsStore = require('../lib/reviewsStore');
+const coupons = require('../coupons');
+
+const ADMIN_KEY = process.env.ADMIN_KEY || '';
 
 const router = express.Router();
 
@@ -82,7 +86,16 @@ function saveHistory(record) {
 }
 
 /* ── 공개 설정 ─────────────────────────────────────── */
-router.get('/config', (req, res) => {
+router.get('/config', async (req, res) => {
+  let real = [];
+  try {
+    real = (await reviewsStore.listApproved(12)).map((r) => ({
+      name: r.name || '익명', topic: r.topic || '', text: r.text, rating: r.rating, sample: false,
+    }));
+  } catch { /* 후기 저장소 오류는 무시 */ }
+  const samples = publicReviews();
+  // 실제 후기가 있으면 그것만, 없으면 예시로 자리 채움
+  const list = real.length ? real : samples;
   res.json({
     currency: 'KRW',
     payProvider: PAY_PROVIDER,
@@ -90,10 +103,55 @@ router.get('/config', (req, res) => {
     aiProvider: claude.PROVIDER,
     topics: topics.publicList(),
     tarot: { price: tarot.PRICE_KRW },
-    reviews: publicReviews(),
-    reviewsReal: hasRealReviews(),
+    reviews: list,
+    reviewsReal: real.length > 0 || hasRealReviews(),
+    couponsOn: coupons.enabled(),
     branding,
   });
+});
+
+/* ── 후기 남기기 (풀이를 받은 주문만) ──────────────── */
+router.post('/review', async (req, res) => {
+  const { orderId, rating, name, text } = req.body || {};
+  const order = await orders.get(orderId);
+  if (!order) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다.' });
+  if (order.status !== 'consumed') return res.status(403).json({ ok: false, error: '풀이를 받은 뒤에 후기를 남길 수 있어요.' });
+  const body = String(text || '').trim();
+  if (body.length < 10) return res.status(400).json({ ok: false, error: '후기를 10자 이상 적어주세요.' });
+  const topic = order.input && order.input.kind === 'tarot'
+    ? '타로 3장'
+    : (topics.resolve(order.topics || (order.input && order.input.topics))[0] || {}).label || '사주 풀이';
+  try {
+    await reviewsStore.add({ orderId, rating, name, text: body, topic });
+    log.info(`후기 접수 (order ${orderId})`);
+    res.json({ ok: true });
+  } catch (e) {
+    log.error('후기 저장 오류:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/* ── 관리자: 후기 승인/삭제 (ADMIN_KEY 필요) ───────── */
+function admin(req, res, next) {
+  if (!ADMIN_KEY || (req.query.key || req.get('x-admin-key')) !== ADMIN_KEY) {
+    return res.status(401).json({ ok: false, error: 'unauthorized' });
+  }
+  next();
+}
+router.get('/admin/reviews', admin, async (req, res) => {
+  res.json({ ok: true, reviews: await reviewsStore.all() });
+});
+router.post('/admin/reviews/:id', admin, async (req, res) => {
+  const act = req.query.action || req.body.action;
+  try {
+    if (act === 'approve') await reviewsStore.setApproved(req.params.id, true);
+    else if (act === 'hide') await reviewsStore.setApproved(req.params.id, false);
+    else if (act === 'delete') await reviewsStore.remove(req.params.id);
+    else return res.status(400).json({ ok: false, error: 'action: approve|hide|delete' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 /* ── 누적 풀이 수 (실데이터, 일정 수준 이상일 때만 노출) ── */
@@ -189,11 +247,24 @@ router.post('/order', async (req, res) => {
 
 /* ── 결제 검증 ────────────────────────────────────── */
 router.post('/order/pay', async (req, res) => {
-  const { orderId } = req.body || {};
+  const { orderId, coupon } = req.body || {};
   const order = await orders.get(orderId);
   if (!order) return res.status(404).json({ ok: false, error: '주문을 찾을 수 없습니다.' });
   if (order.status === 'paid' || order.status === 'consumed') return res.json({ ok: true, already: true });
   if (order.status !== 'pending') return res.status(409).json({ ok: false, error: '결제할 수 없는 주문 상태입니다.' });
+
+  // 쿠폰: 결제 건너뛰고 바로 paid
+  if (coupon) {
+    if (!coupons.isValid(coupon)) return res.status(400).json({ ok: false, error: '쿠폰 코드가 올바르지 않아요.' });
+    if ((await orders.countCoupon()) >= coupons.maxTotal()) {
+      return res.status(409).json({ ok: false, error: '쿠폰이 모두 소진됐어요.' });
+    }
+    order.status = 'paid';
+    order.payment = { provider: 'coupon', code: coupons.normalize(coupon), amount: 0, at: new Date().toISOString() };
+    await orders.save(order);
+    log.info(`쿠폰 사용 ${order.id} (${order.payment.code})`);
+    return res.json({ ok: true, coupon: true });
+  }
 
   // 포트원/모의 모두 결제 식별자로 주문 ID 를 그대로 쓴다 (프론트도 paymentId: orderId 로 결제창 호출)
   const paymentId = order.id;

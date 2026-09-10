@@ -6,6 +6,7 @@ const express = require('express');
 const path = require('path');
 const log = require('./lib/logger');
 const orders = require('./lib/orders');
+const reviews = require('./lib/reviewsStore');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -23,7 +24,8 @@ const PORT = Number(process.env.PORT || 3000);
 (async () => {
   try {
     await orders.init();
-    log.info(`주문 저장소: ${orders.backend}`);
+    await reviews.init();
+    log.info(`주문 저장소: ${orders.backend} / 후기 저장소: ${reviews.backend}`);
   } catch (e) {
     log.error('주문 저장소 초기화 실패:', e.message);
     process.exit(1);

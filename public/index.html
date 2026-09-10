@@ -257,6 +257,16 @@
           <p class="reading__meta" data-read-meta></p>
         </div>
 
+        <div class="panel review-form" data-review-form hidden>
+          <div class="panel__h">후기 남기기</div>
+          <p class="review-form__d">풀이가 도움이 됐다면 두세 줄 남겨주세요. 검토 후 올라갑니다.</p>
+          <div class="rv-stars" data-rv-stars></div>
+          <textarea class="reply" rows="3" maxlength="300" data-rv-text placeholder="어떤 점이 좋았는지 / 아쉬웠는지 편하게"></textarea>
+          <input class="rv-name" maxlength="12" data-rv-name placeholder="표시할 이름 (선택, 예: ㅇㅈ님)" />
+          <button class="btn btn--gold" data-action="review-submit">후기 보내기</button>
+          <p class="review-form__done" data-rv-done hidden>고마워요. 검토 후 반영할게요. 🌙</p>
+        </div>
+
         <div class="result__foot">
           <button class="btn btn--ghost" data-action="copy-link">🔗 링크 복사</button>
           <button class="btn btn--ghost" data-action="share-card">📸 카드 저장</button>
@@ -305,6 +315,16 @@
           <p class="reading__meta" data-tarot-read-meta></p>
         </div>
 
+        <div class="panel review-form" data-review-form hidden>
+          <div class="panel__h">후기 남기기</div>
+          <p class="review-form__d">풀이가 도움이 됐다면 두세 줄 남겨주세요. 검토 후 올라갑니다.</p>
+          <div class="rv-stars" data-rv-stars></div>
+          <textarea class="reply" rows="3" maxlength="300" data-rv-text placeholder="어떤 점이 좋았는지 / 아쉬웠는지 편하게"></textarea>
+          <input class="rv-name" maxlength="12" data-rv-name placeholder="표시할 이름 (선택, 예: ㅇㅈ님)" />
+          <button class="btn btn--gold" data-action="review-submit">후기 보내기</button>
+          <p class="review-form__done" data-rv-done hidden>고마워요. 검토 후 반영할게요. 🌙</p>
+        </div>
+
         <div class="result__foot" data-tarot-foot hidden>
           <button class="btn btn--ghost" data-action="tarot-copy">🔗 링크 복사</button>
           <button class="btn btn--ghost" data-action="tarot-restart">처음부터</button>
@@ -326,6 +346,14 @@
       <p class="modal__d" data-modal-desc>실제로 청구되지 않는 모의 결제예요. 사업자 등록 후 실결제로 전환됩니다.</p>
       <div class="modal__amount"><b data-modal-amount>2,900</b>원</div>
       <p class="modal__items" data-modal-items></p>
+      <div class="coupon" data-coupon-wrap hidden>
+        <button class="coupon__toggle" type="button" data-action="coupon-toggle">쿠폰 코드가 있어요</button>
+        <div class="coupon__row" data-coupon-row hidden>
+          <input data-coupon-input maxlength="32" placeholder="코드 입력" autocapitalize="characters" />
+          <button class="btn btn--ghost" type="button" data-action="coupon-apply">적용</button>
+        </div>
+        <p class="coupon__msg" data-coupon-msg hidden></p>
+      </div>
       <button class="btn btn--gold btn--lg" data-action="pay-now">복채 내기</button>
       <button class="btn btn--ghost" data-action="pay-cancel">취소</button>
     </div>
