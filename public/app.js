@@ -314,13 +314,13 @@ function renderDock(kind) {
       </div>
       <label class="chk" data-leap hidden><input type="checkbox" data-in="isLeapMonth"/> 윤달이에요</label>
       <div class="row3" style="margin-bottom:8px">
-        <div class="field"><span>연</span><input inputmode="numeric" data-in="year" placeholder="1996"/></div>
-        <div class="field"><span>월</span><input inputmode="numeric" data-in="month" placeholder="5"/></div>
-        <div class="field"><span>일</span><input inputmode="numeric" data-in="day" placeholder="15"/></div>
+        <div class="field"><span>연</span><input inputmode="numeric" maxlength="4" data-in="year" data-seq placeholder="1996"/></div>
+        <div class="field"><span>월</span><input inputmode="numeric" maxlength="2" data-in="month" data-seq placeholder="5"/></div>
+        <div class="field"><span>일</span><input inputmode="numeric" maxlength="2" data-in="day" data-seq placeholder="15"/></div>
       </div>
       <div class="row2" style="margin-bottom:6px">
-        <div class="field"><span>시 (0~23)</span><input inputmode="numeric" data-in="hour" placeholder="13"/></div>
-        <div class="field"><span>분</span><input inputmode="numeric" data-in="minute" placeholder="20"/></div>
+        <div class="field"><span>시 (0~23)</span><input inputmode="numeric" maxlength="2" data-in="hour" data-seq placeholder="13"/></div>
+        <div class="field"><span>분</span><input inputmode="numeric" maxlength="2" data-in="minute" data-seq placeholder="20"/></div>
       </div>
       <label class="chk"><input type="checkbox" data-in="hourUnknown"/> 태어난 시각을 몰라요</label>
       <button class="btn btn--gold" data-go>다음</button>`;
@@ -332,6 +332,34 @@ function renderDock(kind) {
       const k = el.dataset.in;
       if (el.type === 'checkbox') { el.checked = !!f[k]; el.onchange = () => (f[k] = el.checked); }
       else { el.value = f[k]; el.oninput = () => (f[k] = el.value.trim()); }
+    });
+    // 연·월·일·시·분: 다 채우면 자동으로 다음 칸으로. 빈 칸에서 지우면 이전 칸으로.
+    const SEQ = ['year', 'month', 'day', 'hour', 'minute'];
+    const filled = (k, v) => {
+      if (v === '') return false;
+      if (k === 'year') return v.length >= 4;
+      if (k === 'minute') return v.length >= 2;
+      return v.length >= 2 || +v >= (k === 'month' ? 2 : k === 'day' ? 4 : 3); // 한 자리라도 두 자리 될 수 없으면 확정
+    };
+    const nextField = (k) => {
+      let i = SEQ.indexOf(k) + 1;
+      if (f.hourUnknown && (SEQ[i] === 'hour' || SEQ[i] === 'minute')) return null;
+      return SEQ[i] ? dock.querySelector(`[data-in="${SEQ[i]}"]`) : null;
+    };
+    dock.querySelectorAll('[data-seq]').forEach((el) => {
+      const k = el.dataset.in;
+      el.addEventListener('input', () => {
+        const clean = el.value.replace(/\D/g, '').slice(0, +el.maxLength);
+        if (clean !== el.value) { el.value = clean; f[k] = clean; }
+        if (filled(k, clean)) { const n = nextField(k); if (n) n.focus(); }
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && el.value === '') {
+          const i = SEQ.indexOf(k) - 1;
+          const p = SEQ[i] && dock.querySelector(`[data-in="${SEQ[i]}"]`);
+          if (p) { p.focus(); e.preventDefault(); }
+        }
+      });
     });
     dock.querySelector('[data-go]').onclick = () => {
       const y = +f.year, mo = +f.month, d = +f.day;
